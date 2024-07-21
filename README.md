@@ -12,9 +12,9 @@ Build the GRVM by calling `make` while in the root directory. The compiled virtu
 ## Planned Features and Road Map
 | Version Number  | Planned Features |
 |---|---|
-| 0.0.1 | - Grassroots bytecode implementation details<br>- GRVM that can run a given Grassroots bytecode (`.gobj` extension) file. |
-| 0.0.2 | - Grassroots assembly implementation details<br>- An assembler than can turn Grassroots assembly (`.ga` extension) files <br>  into a `.gobj` file. |
-| 0.1.0 | - Grassroots language implementation details<br>- A compiler that turns Grassroots (`.gr` extension) files into `.ga` files. |
+| 0.1.0 | - Grassroots bytecode implementation details<br>- GRVM that can run a given Grassroots bytecode (`.gobj` extension) file. |
+| 0.2.0 | - Grassroots assembly implementation details<br>- An assembler than can turn Grassroots assembly (`.ga` extension) files <br>  into a `.gobj` file. |
+| 0.3.0 | - Grassroots language implementation details<br>- A compiler that turns Grassroots (`.gr` extension) files into `.ga` files. |
 
 #### Features I'd like to add in, someday
 - A simulated OS

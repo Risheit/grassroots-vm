@@ -41,4 +41,3 @@ else # Currently not in any build directory
 include $(addprefix $(__full_build_config_dir), target.mk)
 
 endif
-

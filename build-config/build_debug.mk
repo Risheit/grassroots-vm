@@ -32,4 +32,3 @@ _DEPSFILES := $(_SRCS:%.c=$(_DEPSDIR)/%.d)
 $(_DEPSFILES):
 
 include $(wildcard $(_DEPSFILES))
-

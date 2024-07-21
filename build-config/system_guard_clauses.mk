@@ -18,4 +18,3 @@ ifndef __full_build_dir
 $(error Couldn't determine the intended build location. Don't try to run this file directly. Instead, run build.mk)
 
 endif
-

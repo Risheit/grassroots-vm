@@ -1,4 +1,5 @@
-## This makefile handles depositing output objects into a segregated build directory while allowing ## compilation of the top-level makefile from outside of that directory.
+## This makefile handles depositing output objects into a segregated build directory while allowing 
+## compilation of the top-level makefile from outside of that directory.
 ## See: [https://make.mad-scientist.net/papers/multi-architecture-builds] for details.
 
 #### Guard clauses ####
@@ -30,6 +31,10 @@ __full_build_config_dir := $(addprefix $(__top_level_dir), build-config/)
 
 export # Export all defined system variables here
 
+#######################
+# Includes the help command. This should be kept as the first include to ensure that help is called by default.
+include $(addprefix $(__full_build_config_dir), help.mk)
+#######################
 
 ifeq ($(addsuffix /, $(CURDIR)),$(__full_build_dir)) # Check if we're in the build directory
 

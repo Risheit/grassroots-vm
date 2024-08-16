@@ -1,9 +1,12 @@
 ## This file contains customizable configurations for the project.
 ##
+## To see all make commands, run:
+##		make help
+##
 ## Template file structure:
 ##    root/
 ##     ├── build/                 --- Generated build location, customizable under [BUILDDIR].
-##     │   ├── .deps/             --- Dependency files for .o files.
+##     │   ├── .deps/             --- Makefile dependency files for .o files.
 ##     │   ├── foo.o              --- Object files built for linking.
 ##     │   └── executable.exe     --- The executable, customizable under [EXECUTABLE].
 ##     ├── ext/                   --- External headers, customizable and extendable under [INCDIRS].

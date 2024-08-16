@@ -1,6 +1,5 @@
-/** A VM based on the LC-3 architecture.
- *
- * @see: https://www.jmeiners.com/lc3-vm/
+/** 
+ * Taken from https://www.jmeiners.com/lc3-vm/
  */
 
 #include <stdint.h>

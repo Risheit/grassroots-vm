@@ -12,13 +12,15 @@ _ALL_C_FILES := $(notdir $(wildcard $(addprefix $(__full_src_dir), *.c)))
 _SRCS := $(filter-out $(ENTRY), $(_ALL_C_FILES))
 _OBJECTS := $(_SRCS:%.c=%.o)
 
-# Run full compilation.
-# This should remain the first rule, since we want this to be the default rule.
-.PHONY: run
-run: $(EXECUTABLE)
+.PHONY: build
+build: $(EXECUTABLE)
 
 $(EXECUTABLE): $(ENTRY) $(_OBJECTS)
 	$(CC) $(_INCFLAGS) $(CFLAGS) $^ -o $@ $(LNKFLAGS)
+
+.PHONY: run
+run: $(EXECUTABLE)
+	$(addprefix $(__full_build_dir), $(EXECUTABLE))
 
 # Compile the .o file alongside a .d file, which we use to store dependency information.
 %.o: %.c

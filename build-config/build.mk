@@ -39,7 +39,7 @@ include $(addprefix $(__full_build_config_dir), help.mk)
 ifeq ($(addsuffix /, $(CURDIR)),$(__full_build_dir)) # Check if we're in the build directory
 
 VPATH = $(__full_src_dir)
-include $(addprefix $(__full_build_config_dir), build_debug.mk)
+include $(addprefix $(__full_build_config_dir), build_exe.mk)
 
 else # Currently not in any build directory
 

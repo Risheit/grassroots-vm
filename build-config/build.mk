@@ -18,16 +18,20 @@ endif
 
 #######################
 
-
-__specified_build_dir := $(addsuffix /, $(patsubst %/, %, $(BUILDDIR)))
-__specified_src_dir := $(addsuffix /, $(patsubst %/, %, $(SRCDIR)))
-__specified_inc_dirs := $(addsuffix /, $(patsubst %/, %, $(INCDIRS)))
+__full_build_config_dir := $(addprefix $(__top_level_dir), build-config/)
+__specified_inc_dirs := $(addsuffix , $(patsubst %/, %, $(INCDIRS)))
 __root_makefile := $(abspath $(firstword $(MAKEFILE_LIST)))
 __top_level_dir := $(dir $(__root_makefile))
+
+__specified_src_dir := $(addsuffix /, $(patsubst %/, %, $(SRCDIR)))
 __full_src_dir := $(addprefix $(__top_level_dir), $(__specified_src_dir))
 __full_entry_path := $(addprefix $(__full_src_dir), $(ENTRY))
+
+__specified_test_dir := $(addsuffix /, $(patsubst %/, %, $(TESTDIR)))
+__full_test_dir := $(addprefix $(__top_level_dir), $(__specified_test_dir))
+
+__specified_build_dir := $(addsuffix /, $(patsubst %/, %, $(BUILDDIR)))
 __full_build_dir := $(addprefix $(__top_level_dir), $(__specified_build_dir))
-__full_build_config_dir := $(addprefix $(__top_level_dir), build-config/)
 
 export # Export all defined system variables here
 
@@ -36,7 +40,7 @@ export # Export all defined system variables here
 include $(addprefix $(__full_build_config_dir), help.mk)
 #######################
 
-ifeq ($(addsuffix /, $(CURDIR)),$(__full_build_dir)) # Check if we're in the build directory
+ifeq ($(addsuffix /, $(CURDIR)), $(__full_build_dir)) # Check if we're in the build directory
 
 VPATH = $(__full_src_dir)
 include $(addprefix $(__full_build_config_dir), build_exe.mk)

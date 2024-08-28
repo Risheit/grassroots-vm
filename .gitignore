@@ -54,3 +54,7 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# ClangD information
+.cache/
+compile_commands.json

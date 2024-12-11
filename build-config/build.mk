@@ -20,6 +20,7 @@ endif
 
 __full_build_config_dir := $(addprefix $(__top_level_dir), build-config/)
 __specified_inc_dirs := $(addsuffix , $(patsubst %/, %, $(INCDIRS)))
+__specified_lib_dirs := $(addsuffix , $(patsubst %/, %, $(SUBDIRS)))
 __root_makefile := $(abspath $(firstword $(MAKEFILE_LIST)))
 __top_level_dir := $(dir $(__root_makefile))
 

@@ -17,6 +17,7 @@
 ##     │   └── third_party.h
 ##     ├── src/                   --- Source code directory. All .c files must be found directly in this folder.
 ##     │   │                          Customizable under [SRCDIR].
+##     │   ├── std/               --- Directory containing standard library functions and structs.
 ##     │   ├── main.c             --- Entry point for code, customizable under [ENTRY].
 ##     │   ├── foo.c              --- Internal source file. All .c files in [SRCDIR] have their .o representation 
 ##     │   │                          generated automatically during building.
@@ -37,10 +38,11 @@
 ##	CFLAGS = general compiler flags.
 ##	LNKFLAGS = general linker flags.
 
-export EXECUTABLE := vm.exe
+export EXECUTABLE := executable.exe
 
 export ENTRY := main.c
 export SRCDIR := src
+export SUBDIRS := libs
 export TESTDIR := tests
 export BUILDDIR := build
 export INCDIRS := ext

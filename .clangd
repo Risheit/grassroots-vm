@@ -1,0 +1,17 @@
+CompileFlags:
+  Add: [-x, c]
+
+Diagnostics:
+  ClangTidy:
+    Add: modernize*
+    Remove: modernize-use-trailing-return-type
+    CheckOptions:
+      readability-identifier-naming.ConstantCase: lower_case
+      readability-identifier-naming.FunctionCase: lower_case
+      readability-identifier-naming.VariableCase: lower_case
+
+---
+If:
+  PathMatch: .*\.h$
+CompileFlags:
+  Add: [-x, c-header]

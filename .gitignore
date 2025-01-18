@@ -58,3 +58,6 @@ dkms.conf
 # ClangD information
 .cache/
 compile_commands.json
+
+# MacOS Metadata files
+.DS_Store

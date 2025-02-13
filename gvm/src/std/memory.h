@@ -5,8 +5,20 @@
 #include <stddef.h>
 #include <stdint.h>
 
-enum arena_flags {
-  ARENA_DISALLOW_REALLOC = 1 // The arena's backing memory cannot be resized.
+/**
+ * Standard memory storage type. Is not always a byte of memory.
+ */
+typedef unsigned char byte;
+
+enum __std_arena_flags {
+  ARENA_STOP_REALLOC = 1 << 0, // The arena's backing memory cannot be resized.
+};
+
+typedef enum __std_arena_flags arena_flags;
+
+enum __std_arena_internal_flags {
+  IS_ALLOCATED = 1 << 0, // Whether this arena's backing memory is valid.
+  IS_STACK = 1 << 1,     // Whether this arena's backing memory is on the stack.
 };
 
 /**
@@ -16,39 +28,64 @@ enum arena_flags {
  * be individually freed, though an arena can be cleaned for reuse using
  * [arena_clean].
  */
-struct arena;
+struct __std_arena {
+  size_t size;                            // The arena size.
+  size_t offset;                          // Current offset in memory.
+  byte *memory;                           // Backing memory.
+  arena_flags flags;                      // Set arena flags.
+  enum __std_arena_internal_flags iflags; // Set internal arena flags.
+};
+
+typedef struct __std_arena arena;
 
 /**
- * Initializes an arena of [size] bytes with [flags] flags. If the allocation
- * of an arena's backing memory fails, the arena's [is_allocated] flag is set to
- * [false]. If the allocation of the arena itself fails, then the returned
- * pointer is [NULL].
+ * Initializes an arena [arena] of [size] bytes with [flags] flags. If the
+ * allocation of an arena's backing memory fails, the arena's [is_allocated]
+ * flag is set to [false]. If the allocation of the arena itself fails, then the
+ * returned pointer is [NULL].
  */
-struct arena *arena_init(size_t size, enum arena_flags flags);
+arena arena_init(size_t size, enum __std_arena_flags flags);
+
+#define new_arena(size, flags)
+
+/**
+ * Initializes the arena [arena] with [size] bytes and [flags] flags, associated
+ * with the backing memory [memory].
+ *
+ * When creating an arena this way, it is assumed that [memory] and the [arena]
+ * pointer are managed externally to the arena structure, and reallocations and
+ * automatic memory freeing is prevented. Consider using this function instead
+ * of [arena_init] when providing a backing memory and [arena] pointer that is
+ * freed automatically, such as stack-allocated memory.
+ */
+arena arena_init_s(byte *memory, size_t size, enum __std_arena_flags flags);
 
 /**
  * Frees memory allocated by an arena and sets its [is_allocated] flag to
  * [false]. Accessing an arena pointer after calling [arena_delete] is undefined
  * behaviour.
  */
-void arena_delete(struct arena *arena);
+void arena_delete(arena *arena);
 
 /**
  * Allocate a pointer of [size] bytes within the arena. If allocation fails,
- * returns [NULL]. If an arena memory reallocation occurs and fails during this
- * call, the arena's [is_allocated] flag is set to [false] and the function
  * returns [NULL].
- * If [ARENA_DISALLOW_REALLOC] is set, then if the arena would reallocate
- * memory, return NULL instead.
+ * By default, if a pointer allocation would cause the arena to run out of
+ * space, this function reallocates more space to the arena. If
+ * [ARENA_DISALLOW_REALLOC] is set or the arena is allocated on the stack, then
+ * if the arena would reallocate memory, return NULL instead.
+ * If an arena memory reallocation occurs and fails during this call, the
+ * arena's [is_allocated] flag is set to [false] and the function returns
+ * [NULL].
  */
-void *arena_alloc(struct arena *arena, size_t size);
+void *arena_alloc(arena *arena, size_t size);
 
 /**
  * De-allocates all memory initialized within an arena. Accessing any previous
  * memory allocated within an arena after calling [arena_clean] is undefined
  * behaviour.
  */
-void arena_clean(struct arena *arena);
+inline void arena_clean(arena *arena);
 
 /**
  * Returns [true] if the backing memory for this arena is correctly allocated,
@@ -56,6 +93,6 @@ void arena_clean(struct arena *arena);
  * This should be run after an [arena_init] to ensure that the backing memory is
  * initialized correctly.
  */
-bool is_allocated(struct arena *arena);
+inline bool is_allocated(arena *arena);
 
 #endif // __STD_MEMORY_H

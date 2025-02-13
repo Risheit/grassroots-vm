@@ -7,67 +7,77 @@
 // Arena allocator implementation details from:
 // https://www.gingerbill.org/article/2019/02/08/memory-allocation-strategies-002/
 
-struct arena {
-  size_t size;            // The arena size.
-  size_t offset;          // Current offset in memory.
-  void *memory;           // Backing memory.
-  enum arena_flags flags; // Set arena flags.
-  bool is_allocated;      // If this arena has valid backing memory.
-};
+arena arena_init(size_t size, enum __std_arena_flags flags) {
+  byte *memory = malloc(size);
 
-struct arena *arena_init(size_t size, enum arena_flags flags) {
-  struct arena *arena = malloc(sizeof(*arena));
-  void *memory;
+  arena arena = {
+      .memory = memory,
+      .size = size,
+      .flags = flags,
+  };
 
-  if (arena == NULL)
-    return NULL;
-
-  memory = malloc(size);
-  arena->memory = memory;
-  arena->offset = 0;
-  arena->size = size;
-  arena->flags = flags;
-  arena->is_allocated = (memory != NULL);
+  if (memory != NULL)
+    arena.iflags |= IS_ALLOCATED;
 
   return arena;
 }
 
-void arena_delete(struct arena *arena) {
-  free(arena->memory);
-  arena->is_allocated = false;
-  free(arena);
+arena arena_init_s(byte *memory, size_t size, enum __std_arena_flags flags) {
+  assert(memory != NULL);
+  assert(size > 0);
+
+  return (arena){.memory = memory,
+                 .size = size,
+                 .flags = flags,
+                 .iflags = IS_ALLOCATED | IS_STACK};
 }
 
-static void reallocate(struct arena *arena) {
-  void *realloc_mem = realloc(arena->memory, arena->size * 2);
+void arena_delete(arena *arena) {
+  arena->iflags &= ~IS_ALLOCATED;
+
+  if (!(arena->iflags & IS_STACK)) {
+    free(arena->memory);
+  }
+}
+
+static void reallocate(arena *arena, size_t min_realloc) {
+  size_t realloc_amt = arena->size * 2;
+
+  while (realloc_amt <= min_realloc)
+    realloc_amt *= 2;
+
+  byte *realloc_mem = realloc(arena->memory, realloc_amt);
   arena->memory = realloc_mem;
   arena->size = arena->size * 2;
-  arena->is_allocated = (realloc_mem != NULL);
+  arena->iflags &= ~IS_ALLOCATED;
+  if (realloc_mem != NULL)
+    arena->iflags |= IS_ALLOCATED;
 }
 
 /**
  * Find offset to align [size] to word alignment.
  */
 static size_t align_forward(size_t size) {
-  const size_t alignment = 2 * sizeof(void *);
+  const size_t alignment = 2 * sizeof(byte *);
 
   return alignment - (size % alignment);
 }
 
-void *arena_alloc(struct arena *arena, size_t size) {
-  bool allow_realloc = (arena->flags & ARENA_DISALLOW_REALLOC);
-  void *ptr;
+void *arena_alloc(arena *arena, size_t size) {
+  bool allow_realloc =
+      !(arena->flags & ARENA_STOP_REALLOC) && !(arena->iflags & IS_STACK);
+  byte *ptr;
 
-  assert(arena->is_allocated);
+  assert(is_allocated(arena));
   assert(size > 0);
 
   if (arena->size < size + arena->offset) {
     if (allow_realloc)
-      reallocate(arena);
+      reallocate(arena, size + arena->offset);
     else
       return NULL;
 
-    if (arena->is_allocated == false) // Reallocation failed
+    if (!is_allocated(arena)) // Reallocation failed
       return NULL;
   }
 
@@ -77,6 +87,6 @@ void *arena_alloc(struct arena *arena, size_t size) {
   return ptr;
 }
 
-void arena_clean(struct arena *arena) { arena->offset = 0; }
+inline void arena_clean(arena *arena) { arena->offset = 0; }
 
-bool is_allocated(struct arena *arena) { return arena->is_allocated; }
+inline bool is_allocated(arena *arena) { return arena->iflags & IS_ALLOCATED; }

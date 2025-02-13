@@ -4,8 +4,7 @@
 #include <stddef.h>
 #include <string.h>
 
-string str_alloc(arena *arena, const char *buf) {
-  size_t n = strlen(buf);
+static string str_alloc_n(arena *arena, const char *buf, size_t n) {
   char *memory = arena_alloc(arena, n * sizeof(buf));
   string str = {.len = n, .err = memory == NULL};
 
@@ -17,25 +16,41 @@ string str_alloc(arena *arena, const char *buf) {
   return str;
 }
 
-string str_alloc_s(const char *buf) {
+string str_alloc(arena *arena, const char *buf) {
+  size_t n = strlen(buf);
+  return str_alloc_n(arena, buf, n);
+}
+
+string str(const char *buf) {
   size_t n = strlen(buf);
   return (string){.buf = buf, .len = n};
 }
 
-inline size_t len(string str) { return str.len; }
+int str_compare(string a, string b) {
+  // Early length check to try and avoid full string comp
+  if (len(a) != len(b))
+    return len(a) > len(b) ? 1 : -1;
 
-inline const char *get(string str) { return str.buf; }
-
-inline char at(string str, size_t at) {
-  assert(at >= 0);
-  assert(at < str.len);
-
-  return str.buf[at];
+  return strncmp(get(a), get(b), len(a));
 }
 
-inline const char *from(string str, size_t from) {
+string str_substr(string str, size_t from, size_t to) {
+  assert(from <= len(str));
   assert(from >= 0);
-  assert(from < str.len);
+  assert(to <= len(str));
+  assert(to >= 0);
 
-  return str.buf + from;
+  if (from >= to)
+    return str_empty;
+
+  return (string){.buf = get(str) + from, .len = to - from};
+}
+
+size_t str_find(string str, char c) {
+  size_t i = 0;
+  for (; i < len(str); i++) {
+    if (at(str, i) == c)
+      return i;
+  }
+  return i;
 }

@@ -87,6 +87,6 @@ void *arena_alloc(arena *arena, size_t size) {
   return ptr;
 }
 
-inline void arena_clean(arena *arena) { arena->offset = 0; }
+void arena_clean(arena *arena) { arena->offset = 0; }
 
-inline bool is_allocated(arena *arena) { return arena->iflags & IS_ALLOCATED; }
+bool is_allocated(arena *arena) { return arena->iflags & IS_ALLOCATED; }

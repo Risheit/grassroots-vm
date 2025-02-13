@@ -21,13 +21,6 @@ enum __std_arena_internal_flags {
   IS_STACK = 1 << 1,     // Whether this arena's backing memory is on the stack.
 };
 
-/**
- * Memory storage type. Arenas store large chunks of contiguous memory, and
- * allow for smaller allocations within. Memory allocated within an arena is
- * guaranteed to exist for the lifetime of that arena, blocks of memory cannot
- * be individually freed, though an arena can be cleaned for reuse using
- * [arena_clean].
- */
 struct __std_arena {
   size_t size;                            // The arena size.
   size_t offset;                          // Current offset in memory.
@@ -36,6 +29,13 @@ struct __std_arena {
   enum __std_arena_internal_flags iflags; // Set internal arena flags.
 };
 
+/**
+ * Memory storage type. Arenas store large chunks of contiguous memory, and
+ * allow for smaller allocations within. Memory allocated within an arena is
+ * guaranteed to exist for the lifetime of that arena, blocks of memory cannot
+ * be individually freed, though an arena can be cleaned for reuse using
+ * [arena_clean].
+ */
 typedef struct __std_arena arena;
 
 /**
@@ -85,7 +85,7 @@ void *arena_alloc(arena *arena, size_t size);
  * memory allocated within an arena after calling [arena_clean] is undefined
  * behaviour.
  */
-inline void arena_clean(arena *arena);
+void arena_clean(arena *arena);
 
 /**
  * Returns [true] if the backing memory for this arena is correctly allocated,
@@ -93,6 +93,6 @@ inline void arena_clean(arena *arena);
  * This should be run after an [arena_init] to ensure that the backing memory is
  * initialized correctly.
  */
-inline bool is_allocated(arena *arena);
+bool is_allocated(arena *arena);
 
 #endif // __STD_MEMORY_H

@@ -9,7 +9,7 @@
 struct std_string {
   size_t len;
   const char *buf;
-  uint8_t err;
+  uint_fast8_t err;
 };
 
 /**
@@ -64,12 +64,12 @@ size_t str_find(string str, char c);
 /**
  * Get the length of string [str].
  */
-static inline size_t len(string str) { return str.len; }
+inline size_t len(string str) { return str.len; }
 
 /**
  * Get the value of the string [str].
  */
-static inline const char *get(string str) {
+inline const char *get(string str) {
   assert(str.err == 0);
 
   return str.buf;
@@ -78,7 +78,7 @@ static inline const char *get(string str) {
 /**
  * Get the character at [at] in [str].
  */
-static inline char at(string str, size_t at) {
+inline char at(string str, size_t at) {
   assert(at >= 0);
   assert(at < str.len);
 

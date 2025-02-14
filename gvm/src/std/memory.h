@@ -22,10 +22,10 @@ enum std_arena_internal_flags {
 };
 
 struct std_arena {
-  size_t size;                            // The arena size.
-  size_t offset;                          // Current offset in memory.
-  byte *memory;                           // Backing memory.
-  arena_flags flags;                      // Set arena flags.
+  size_t size;                          // The arena size.
+  size_t offset;                        // Current offset in memory.
+  byte *memory;                         // Backing memory.
+  arena_flags flags;                    // Set arena flags.
   enum std_arena_internal_flags iflags; // Set internal arena flags.
 };
 
@@ -85,7 +85,7 @@ void *arena_alloc(arena *arena, size_t size);
  * memory allocated within an arena after calling [arena_clean] is undefined
  * behaviour.
  */
-void arena_clean(arena *arena);
+inline void arena_clean(arena *arena) { arena->offset = 0; }
 
 /**
  * Returns [true] if the backing memory for this arena is correctly allocated,
@@ -93,6 +93,6 @@ void arena_clean(arena *arena);
  * This should be run after an [arena_init] to ensure that the backing memory is
  * initialized correctly.
  */
-bool is_allocated(arena *arena);
+inline bool is_allocated(arena *arena) { return arena->iflags & IS_ALLOCATED; }
 
 #endif // STD_MEMORY_H

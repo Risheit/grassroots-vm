@@ -43,7 +43,7 @@ string str_create(arena *arena, const char *buf);
  */
 string str_create_s(const char *buf);
 
-#define str str_create_s
+#define str(buf) str_create_s(buf)
 
 /**
  * Compares the two strings [a] and [b].

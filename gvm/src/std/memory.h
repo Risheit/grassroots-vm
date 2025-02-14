@@ -16,19 +16,6 @@ enum std_arena_flags {
 
 typedef enum std_arena_flags arena_flags;
 
-enum std_arena_internal_flags {
-  IS_ALLOCATED = 1 << 0, // Whether this arena's backing memory is valid.
-  IS_STACK = 1 << 1,     // Whether this arena's backing memory is on the stack.
-};
-
-struct std_arena {
-  size_t size;                          // The arena size.
-  size_t offset;                        // Current offset in memory.
-  byte *memory;                         // Backing memory.
-  arena_flags flags;                    // Set arena flags.
-  enum std_arena_internal_flags iflags; // Set internal arena flags.
-};
-
 /**
  * Memory storage type. Arenas store large chunks of contiguous memory, and
  * allow for smaller allocations within. Memory allocated within an arena is
@@ -44,7 +31,7 @@ typedef struct std_arena arena;
  * flag is set to [false]. If the allocation of the arena itself fails, then the
  * returned pointer is [NULL].
  */
-arena arena_create(size_t size, enum std_arena_flags flags);
+arena *arena_create(size_t size, arena_flags flags);
 
 #define new_arena(size, flags)
 
@@ -57,8 +44,11 @@ arena arena_create(size_t size, enum std_arena_flags flags);
  * automatic memory freeing is prevented. Consider using this function instead
  * of [arena_init] when providing a backing memory and [arena] pointer that is
  * freed automatically, such as stack-allocated memory.
+ *
+ * The returned arena pointer is also located in this memory, and is destroyed
+ * when [memory] is destroyed.
  */
-arena arena_create_s(byte *memory, size_t size, enum std_arena_flags flags);
+arena *arena_create_s(void *memory, size_t size, arena_flags flags);
 
 /**
  * Frees memory allocated by an arena and sets its [is_allocated] flag to

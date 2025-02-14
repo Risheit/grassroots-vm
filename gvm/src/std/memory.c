@@ -7,7 +7,7 @@
 // Arena allocator implementation details from:
 // https://www.gingerbill.org/article/2019/02/08/memory-allocation-strategies-002/
 
-arena arena_init(size_t size, enum std_arena_flags flags) {
+arena arena_create(size_t size, enum std_arena_flags flags) {
   byte *memory = malloc(size);
 
   arena arena = {
@@ -22,7 +22,7 @@ arena arena_init(size_t size, enum std_arena_flags flags) {
   return arena;
 }
 
-arena arena_init_s(byte *memory, size_t size, enum std_arena_flags flags) {
+arena arena_create_s(byte *memory, size_t size, enum std_arena_flags flags) {
   assert(memory != NULL);
   assert(size > 0);
 
@@ -32,7 +32,7 @@ arena arena_init_s(byte *memory, size_t size, enum std_arena_flags flags) {
                  .iflags = IS_ALLOCATED | IS_STACK};
 }
 
-void arena_delete(arena *arena) {
+void arena_destroy(arena *arena) {
   arena->iflags &= ~IS_ALLOCATED;
 
   if (!(arena->iflags & IS_STACK)) {

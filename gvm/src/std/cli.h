@@ -52,12 +52,12 @@ typedef struct std_argument argument;
  * * [--long=arg] or [--long arg] provide the [--long] long option with the
  * argument [arg].
  */
-argument next_argv(int argc, const char **argv);
+argument cli_argv_next(int argc, const char **argv);
 
 /**
  * Resets the state of argument parsing. Calling [next_argv] after calling this
  * function will begin argument parsing from the first argument.
  */
-void reset_arg_parse();
+void cli_argv_reset();
 
 #endif // STD_CLI_H

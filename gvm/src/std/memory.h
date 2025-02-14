@@ -44,7 +44,7 @@ typedef struct std_arena arena;
  * flag is set to [false]. If the allocation of the arena itself fails, then the
  * returned pointer is [NULL].
  */
-arena arena_init(size_t size, enum std_arena_flags flags);
+arena arena_create(size_t size, enum std_arena_flags flags);
 
 #define new_arena(size, flags)
 
@@ -58,14 +58,14 @@ arena arena_init(size_t size, enum std_arena_flags flags);
  * of [arena_init] when providing a backing memory and [arena] pointer that is
  * freed automatically, such as stack-allocated memory.
  */
-arena arena_init_s(byte *memory, size_t size, enum std_arena_flags flags);
+arena arena_create_s(byte *memory, size_t size, enum std_arena_flags flags);
 
 /**
  * Frees memory allocated by an arena and sets its [is_allocated] flag to
  * [false]. Accessing an arena pointer after calling [arena_delete] is undefined
  * behaviour.
  */
-void arena_delete(arena *arena);
+void arena_destroy(arena *arena);
 
 /**
  * Allocate a pointer of [size] bytes within the arena. If allocation fails,

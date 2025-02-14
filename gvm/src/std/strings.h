@@ -30,7 +30,7 @@ static const string str_empty = {.buf = ""};
  *
  * On an error, the [err] field of string is set to a non-zero value.
  */
-string str_alloc(arena *arena, const char *buf);
+string str_create(arena *arena, const char *buf);
 
 /**
  * Initializes a string into [str] from a given null-terminated char array
@@ -41,7 +41,9 @@ string str_alloc(arena *arena, const char *buf);
  * Consider using this function over [str_alloc] when dealing with memory that
  * will be automatically freed, like stack-allocated strings.
  */
-string str(const char *buf);
+string str_create_s(const char *buf);
+
+#define str str_create_s
 
 /**
  * Compares the two strings [a] and [b].

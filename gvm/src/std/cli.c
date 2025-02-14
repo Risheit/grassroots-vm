@@ -46,7 +46,7 @@ static argument parse_opt(string opt) {
   return is_long_opt ? parse_long_opt(opt) : parse_short_opt(opt);
 }
 
-argument next_argv(int argc, const char **argv) {
+argument cli_argv_next(int argc, const char **argv) {
   // No more arguments to parse
   if (opt_cur >= argc)
     return (argument){.type = ARG_END};
@@ -85,7 +85,7 @@ argument next_argv(int argc, const char **argv) {
   return (argument){.type = ARG_ARGUMENT, .argument = {.val = this_arg}};
 }
 
-void reset_arg_parse() {
+void cli_argv_reset() {
   opt_cur = 1;
   is_args_region = false;
 }

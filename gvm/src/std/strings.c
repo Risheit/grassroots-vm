@@ -16,12 +16,12 @@ static string str_alloc_n(arena *arena, const char *buf, size_t n) {
   return str;
 }
 
-string str_alloc(arena *arena, const char *buf) {
+string str_create(arena *arena, const char *buf) {
   size_t n = strlen(buf);
   return str_alloc_n(arena, buf, n);
 }
 
-string str(const char *buf) {
+string str_create_s(const char *buf) {
   size_t n = strlen(buf);
   return (string){.buf = buf, .len = n};
 }

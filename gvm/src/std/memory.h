@@ -1,5 +1,5 @@
-#ifndef __STD_MEMORY_H
-#define __STD_MEMORY_H
+#ifndef STD_MEMORY_H
+#define STD_MEMORY_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -10,23 +10,23 @@
  */
 typedef unsigned char byte;
 
-enum __std_arena_flags {
+enum std_arena_flags {
   ARENA_STOP_REALLOC = 1 << 0, // The arena's backing memory cannot be resized.
 };
 
-typedef enum __std_arena_flags arena_flags;
+typedef enum std_arena_flags arena_flags;
 
-enum __std_arena_internal_flags {
+enum std_arena_internal_flags {
   IS_ALLOCATED = 1 << 0, // Whether this arena's backing memory is valid.
   IS_STACK = 1 << 1,     // Whether this arena's backing memory is on the stack.
 };
 
-struct __std_arena {
+struct std_arena {
   size_t size;                            // The arena size.
   size_t offset;                          // Current offset in memory.
   byte *memory;                           // Backing memory.
   arena_flags flags;                      // Set arena flags.
-  enum __std_arena_internal_flags iflags; // Set internal arena flags.
+  enum std_arena_internal_flags iflags; // Set internal arena flags.
 };
 
 /**
@@ -36,7 +36,7 @@ struct __std_arena {
  * be individually freed, though an arena can be cleaned for reuse using
  * [arena_clean].
  */
-typedef struct __std_arena arena;
+typedef struct std_arena arena;
 
 /**
  * Initializes an arena [arena] of [size] bytes with [flags] flags. If the
@@ -44,7 +44,7 @@ typedef struct __std_arena arena;
  * flag is set to [false]. If the allocation of the arena itself fails, then the
  * returned pointer is [NULL].
  */
-arena arena_init(size_t size, enum __std_arena_flags flags);
+arena arena_init(size_t size, enum std_arena_flags flags);
 
 #define new_arena(size, flags)
 
@@ -58,7 +58,7 @@ arena arena_init(size_t size, enum __std_arena_flags flags);
  * of [arena_init] when providing a backing memory and [arena] pointer that is
  * freed automatically, such as stack-allocated memory.
  */
-arena arena_init_s(byte *memory, size_t size, enum __std_arena_flags flags);
+arena arena_init_s(byte *memory, size_t size, enum std_arena_flags flags);
 
 /**
  * Frees memory allocated by an arena and sets its [is_allocated] flag to
@@ -95,4 +95,4 @@ void arena_clean(arena *arena);
  */
 bool is_allocated(arena *arena);
 
-#endif // __STD_MEMORY_H
+#endif // STD_MEMORY_H

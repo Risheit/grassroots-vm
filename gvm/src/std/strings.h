@@ -1,12 +1,12 @@
-#ifndef __STD_STRINGS_H
-#define __STD_STRINGS_H
+#ifndef STD_STRINGS_H
+#define STD_STRINGS_H
 
 #include "std/memory.h"
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 
-struct __std_string {
+struct std_string {
   size_t len;
   const char *buf;
   uint8_t err;
@@ -19,7 +19,7 @@ struct __std_string {
  *
  * The goal of string is to provide a clean, safe way to handle char arrays.
  */
-typedef struct __std_string string;
+typedef struct std_string string;
 
 static const string str_empty = {.buf = ""};
 
@@ -85,4 +85,4 @@ static inline char at(string str, size_t at) {
   return str.buf[at];
 }
 
-#endif // __STD_STRINGS_H
+#endif // STD_STRINGS_H

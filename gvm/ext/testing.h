@@ -139,15 +139,15 @@
     return TEST_DNAME.failed;                                                  \
   } while (0)
 
-typedef enum {
+enum std_test_state {
   testing_PASSED,
   testing_FAILED,
   testing_NOT_RUN,
-} __test_state;
+};
 
 typedef struct {
   int32_t failed;
   int32_t run;
   const char *message;
-  __test_state state;
+  enum std_test_state state;
 } test_data;

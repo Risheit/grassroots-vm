@@ -1,19 +1,17 @@
-#ifndef __STD_CLI_H
-#define __STD_CLI_H
+#ifndef STD_CLI_H
+#define STD_CLI_H
 
 #include "std/strings.h"
-#include <stdbool.h>
 
-enum __std_arg_type {
+enum std_arg_type {
   ARG_OPTION,   // Is command line option (-a, --long)
   ARG_ARGUMENT, // Is command line argument (arg1)
-  ARG_END,      // Argument parsing is complete, no further arguments or options
-                // available to parse.
+  ARG_END,      // No further arguments or options available to parse.
 };
 
-typedef enum __std_arg_type arg_type;
+typedef enum std_arg_type arg_type;
 
-struct __std_argument {
+struct std_argument {
   union {
     struct {
       string name;
@@ -32,7 +30,7 @@ struct __std_argument {
  * If [type] is [ARG_OPTION], then the union [option] is available.
  * If [type] is [ARG_ARGUMENT], then the union [argument] is available.
  */
-typedef struct __std_argument argument;
+typedef struct std_argument argument;
 
 /**
  * Returns the next argument or option unparsed within [argv]. Repeated calls
@@ -62,4 +60,4 @@ argument next_argv(int argc, const char **argv);
  */
 void reset_arg_parse();
 
-#endif // __STD_CLI_H
+#endif // STD_CLI_H

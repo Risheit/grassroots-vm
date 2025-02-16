@@ -21,7 +21,7 @@ string str_create(arena *arena, const char *buf) {
   return str_alloc_n(arena, buf, n);
 }
 
-string str_create_s(const char *buf) {
+string str(const char *buf) {
   size_t n = strlen(buf);
   return (string){.buf = buf, .len = n};
 }

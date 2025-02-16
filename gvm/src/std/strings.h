@@ -41,9 +41,7 @@ string str_create(arena *arena, const char *buf);
  * Consider using this function over [str_alloc] when dealing with memory that
  * will be automatically freed, like stack-allocated strings.
  */
-string str_create_s(const char *buf);
-
-#define str(buf) str_create_s(buf)
+string str(const char *buf);
 
 /**
  * Compares the two strings [a] and [b].

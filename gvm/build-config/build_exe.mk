@@ -21,6 +21,7 @@ _LIB_C_FILES := $(subst $(__full_src_dir),, $(wildcard $(addprefix $(__full_src_
 _SRC_FILTER_LIST := $(ENTRY) $(_LIBSDIR)/$(_TEST_RUNNER).c
 _SRCS := $(filter-out $(_SRC_FILTER_LIST), $(_ALL_C_FILES)) $(filter-out $(_SRC_FILTER_LIST), $(_LIB_C_FILES))
 _OBJECTS := $(_SRCS:%.c=%.o)
+ARGS ?= 
 
 
 .PHONY: build
@@ -28,7 +29,7 @@ build: $(EXECUTABLE)
 
 .PHONY: run
 run: $(EXECUTABLE)
-	@$(addprefix $(__full_build_dir), $(EXECUTABLE))
+	@$(addprefix $(__full_build_dir), $(EXECUTABLE)) $(ARGS)
 
 .PHONY: test
 test: $(_TEST_RUNNER_EXE) $(_TEST_EXES)

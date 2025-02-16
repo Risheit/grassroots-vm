@@ -75,7 +75,7 @@ void *arena_alloc(arena *arena, size_t size);
  * memory allocated within an arena after calling [arena_clean] is undefined
  * behaviour.
  */
-inline void arena_clean(arena *arena) { arena->offset = 0; }
+void arena_clean(arena *arena); 
 
 /**
  * Returns [true] if the backing memory for this arena is correctly allocated,
@@ -83,6 +83,6 @@ inline void arena_clean(arena *arena) { arena->offset = 0; }
  * This should be run after an [arena_init] to ensure that the backing memory is
  * initialized correctly.
  */
-inline bool is_allocated(arena *arena) { return arena->iflags & IS_ALLOCATED; }
+bool is_allocated(arena *arena); 
 
 #endif // STD_MEMORY_H

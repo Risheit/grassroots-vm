@@ -15,13 +15,17 @@ enum internal_flags {
 struct std_arena {
   size_t size;                // The arena size.
   size_t offset;              // Current offset in memory.
-  byte *memory;               // Backing memory.
   arena_flags flags;          // Set arena flags.
   enum internal_flags iflags; // Set internal arena flags.
+  byte *memory;               // Backing memory.
 };
 
 arena *arena_create(size_t size, enum std_arena_flags flags) {
   arena *arena = calloc(1, sizeof(*arena));
+
+  if (arena == NULL)
+    return NULL;
+
   byte *memory = malloc(size);
 
   arena->memory = memory;
@@ -66,6 +70,7 @@ void arena_destroy(arena *arena) {
     free(arena->memory);
     free(arena);
   }
+  *arena = (struct std_arena){0};
 }
 
 static void reallocate(arena *arena, size_t min_realloc) {
@@ -82,7 +87,7 @@ static void reallocate(arena *arena, size_t min_realloc) {
     arena->iflags |= IS_ALLOCATED;
 }
 
-void *arena_alloc(arena *arena, size_t size) {
+void *arena_alloc(arena arena[static 1], size_t size) {
   bool allow_realloc =
       !(arena->flags & ARENA_STOP_REALLOC) && !(arena->iflags & IS_STACK);
 
@@ -105,6 +110,6 @@ void *arena_alloc(arena *arena, size_t size) {
   return ptr;
 }
 
-extern inline void arena_clean(arena *arena);
+void arena_clean(arena *arena) { arena->offset = 0; }
 
-extern inline bool is_allocated(arena *arena);
+bool is_allocated(arena *arena) { return arena->iflags & IS_ALLOCATED; }

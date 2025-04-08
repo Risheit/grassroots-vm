@@ -15,20 +15,12 @@
  *
  * A set of test functions. Test functions are functions that make use of the
  * test macros in this file, and are registered in the test files main function
- * (more on that later). Each test function has to have the same function
- * signature:
+ * (more on that later). Test functions can be added with the TEST macro:
  *
  * ```
- * void func_name(test_data *main) { ... }
+ * TEST(test_name) { ... }
  * ```
- *
- * The test_data parameter must be named according to the variable [TEST_DNAME].
- * In this file, the default definition for that is [main], but if needed a test
- * file can define its own parameter name by calling
- *
- * ```
- * #define TEST_DNAME param_name
- * ```
+ * test_name must be a valid function name.
 
  * before including the testing header file.
  *
@@ -36,7 +28,7 @@
  * A standard test function might look like this:
  *
  * ```
- * void testAddFunction(test_data *main) {
+ * TEST(testAddFunction) {
  *  int act = add(3, 2);
  *  IS_TRUE(act == 5);
  * }
@@ -65,9 +57,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#ifndef TEST_DNAME
-#define TEST_DNAME main
-#endif
+#define TEST_DNAME __std_test_data_main
 
 // ---
 
@@ -90,7 +80,8 @@
     if (!(expression)) {                                                       \
       TEST_DNAME->state = testing_FAILED;                                      \
       TEST_DNAME->failed++;                                                    \
-      TEST_DNAME->message = #expression " was false when expected true";       \
+      TEST_DNAME->message =                                                    \
+          __FILE__ __LINE__ #expression " was false when expected true";       \
       return;                                                                  \
     } else {                                                                   \
       TEST_DNAME->state = testing_PASSED;                                      \
@@ -102,7 +93,8 @@
     if (expression) {                                                          \
       TEST_DNAME->state = testing_FAILED;                                      \
       TEST_DNAME->failed++;                                                    \
-      TEST_DNAME->message = #expression " was true when expected false";       \
+      TEST_DNAME->message =                                                    \
+          __FILE __LINE__ #expression " was true when expected false";         \
       return;                                                                  \
     } else {                                                                   \
       TEST_DNAME->state = testing_PASSED;                                      \
@@ -112,19 +104,19 @@
 // ---
 
 #define INIT()                                                                 \
-  test_data TEST_DNAME;                                                        \
+  std_test_data TEST_DNAME;                                                    \
   do {                                                                         \
     TEST_DNAME.failed = 0;                                                     \
     TEST_DNAME.run = 0;                                                        \
     TEST_DNAME.message = "";                                                   \
     TEST_DNAME.state = testing_NOT_RUN;                                        \
-    fprintf(stderr, "Running tests for " __FILE__":\n"); \
+    fprintf(stderr, "Running tests for " __FILE__ ":\n");                      \
   } while (0)
 
-#define RUN(TEST)                                                              \
+#define RUN(testname)                                                          \
   do {                                                                         \
     TEST_DNAME.run++;                                                          \
-    TEST(&TEST_DNAME);                                                         \
+    testname(&TEST_DNAME);                                                     \
     if (TEST_DNAME.state == testing_FAILED) {                                  \
       fprintf(stderr, __FILE__ ": Test %d failed: %s\n", TEST_DNAME.run,       \
               TEST_DNAME.message);                                             \
@@ -139,15 +131,18 @@
     return TEST_DNAME.failed;                                                  \
   } while (0)
 
-enum std_test_state {
+#define TEST(testname) void testname(std_test_data *TEST_DNAME)
+
+typedef enum std_test_state {
   testing_PASSED,
   testing_FAILED,
   testing_NOT_RUN,
-};
+} std_test_state;
 
-typedef struct {
+typedef struct std_test_data {
   int32_t failed;
   int32_t run;
   const char *message;
-  enum std_test_state state;
-} test_data;
+  std_test_state state;
+} std_test_data;
+

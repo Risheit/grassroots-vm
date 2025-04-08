@@ -4,9 +4,9 @@
 #include <stddef.h>
 #include <string.h>
 
-static string str_alloc_n(arena *arena, const char *buf, size_t n) {
+static std_string str_alloc_n(std_arena *arena, const char *buf, size_t n) {
   char *memory = arena_alloc(arena, n * sizeof(buf));
-  string str = {.len = n, .err = memory == NULL};
+  std_string str = {.len = n, .err = memory == NULL};
 
   if (!memory)
     return str;
@@ -16,17 +16,17 @@ static string str_alloc_n(arena *arena, const char *buf, size_t n) {
   return str;
 }
 
-string str_create(arena *arena, const char *buf) {
+std_string str_create(std_arena *arena, const char *buf) {
   size_t n = strlen(buf);
   return str_alloc_n(arena, buf, n);
 }
 
-string str(const char *buf) {
+std_string str(const char *buf) {
   size_t n = strlen(buf);
-  return (string){.buf = buf, .len = n};
+  return (std_string){.buf = buf, .len = n};
 }
 
-int str_compare(string a, string b) {
+int str_compare(std_string a, std_string b) {
   // Early length check to try and avoid full string comp
   if (len(a) != len(b))
     return len(a) > len(b) ? 1 : -1;
@@ -34,19 +34,19 @@ int str_compare(string a, string b) {
   return strncmp(get(a), get(b), len(a));
 }
 
-string str_substr(string str, size_t from, size_t to) {
+std_string str_substr(std_string str, size_t from, size_t to) {
   assert(from <= len(str));
   assert(from >= 0);
   assert(to <= len(str));
   assert(to >= 0);
 
   if (from >= to)
-    return str_empty;
+    return STR_EMPTY;
 
-  return (string){.buf = get(str) + from, .len = to - from};
+  return (std_string){.buf = get(str) + from, .len = to - from};
 }
 
-size_t str_find(string str, char c) {
+size_t str_find(std_string str, char c) {
   size_t i = 0;
   for (; i < len(str); i++) {
     if (at(str, i) == c)
@@ -55,15 +55,15 @@ size_t str_find(string str, char c) {
   return i;
 }
 
-extern inline size_t len(string str); 
+extern inline size_t len(std_string str); 
 
 /**
  * Get the value of the string [str].
  */
-extern inline const char *get(string str); 
+extern inline const char *get(std_string str); 
 
 /**
  * Get the character at [at] in [str].
  */
-extern inline char at(string str, size_t at); 
+extern inline char at(std_string str, size_t at); 
 

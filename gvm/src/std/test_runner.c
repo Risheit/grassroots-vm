@@ -15,10 +15,10 @@
 #include <stdlib.h>
 
 int main(int argc, char **argv) {
-  int failed_tests = 0;
+  int32_t failed_tests = 0;
   fprintf(stderr, "\nRunning Tests:\n\n");
   for (int i = 1; i < argc; i++) {
-    int ret = system(argv[i]);
+    int32_t ret = system(argv[i]);
     if (WIFEXITED(ret)) {
       failed_tests += WEXITSTATUS(ret);
     }

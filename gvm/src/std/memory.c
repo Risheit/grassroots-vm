@@ -15,13 +15,13 @@ enum internal_flags {
 struct std_arena {
   size_t size;                // The arena size.
   size_t offset;              // Current offset in memory.
-  arena_flags flags;          // Set arena flags.
+  enum std_arena_flags flags; // Set arena flags.
   enum internal_flags iflags; // Set internal arena flags.
   byte *memory;               // Backing memory.
 };
 
-arena *arena_create(size_t size, enum std_arena_flags flags) {
-  arena *arena = calloc(1, sizeof(*arena));
+std_arena *arena_create(size_t size, enum std_arena_flags flags) {
+  std_arena *arena = calloc(1, sizeof *arena);
 
   if (arena == NULL)
     return NULL;
@@ -47,13 +47,13 @@ static size_t align_forward(size_t size) {
   return alignment - (size % alignment);
 }
 
-arena *arena_create_s(void *memory, size_t size, arena_flags flags) {
-  arena *arena = memory;
+std_arena *arena_create_s(void *memory, size_t size, std_arena_flags flags) {
+  std_arena *arena = memory;
 
   assert(memory != NULL);
-  assert(size > sizeof(*arena));
+  assert(size > sizeof *arena);
 
-  memset(arena, 0, sizeof(*arena));
+  memset(arena, 0, sizeof *arena);
   arena->memory = memory;
   // Adjust offset in [memory] to account for [arena] allocation.
   arena->offset = align_forward(sizeof(*arena)) + sizeof(*arena);
@@ -63,7 +63,7 @@ arena *arena_create_s(void *memory, size_t size, arena_flags flags) {
   return arena;
 }
 
-void arena_destroy(arena *arena) {
+void arena_destroy(std_arena *arena) {
   arena->iflags &= ~IS_ALLOCATED;
 
   if (!(arena->iflags & IS_STACK)) {
@@ -73,7 +73,7 @@ void arena_destroy(arena *arena) {
   *arena = (struct std_arena){0};
 }
 
-static void reallocate(arena *arena, size_t min_realloc) {
+static void reallocate(std_arena *arena, size_t min_realloc) {
   size_t realloc_amt = arena->size * 2;
 
   while (realloc_amt <= min_realloc)
@@ -87,7 +87,7 @@ static void reallocate(arena *arena, size_t min_realloc) {
     arena->iflags |= IS_ALLOCATED;
 }
 
-void *arena_alloc(arena arena[static 1], size_t size) {
+void *arena_alloc(std_arena arena[static 1], size_t size) {
   bool allow_realloc =
       !(arena->flags & ARENA_STOP_REALLOC) && !(arena->iflags & IS_STACK);
 
@@ -110,6 +110,6 @@ void *arena_alloc(arena arena[static 1], size_t size) {
   return ptr;
 }
 
-void arena_clean(arena *arena) { arena->offset = 0; }
+void arena_clean(std_arena *arena) { arena->offset = 0; }
 
-bool is_allocated(arena *arena) { return arena->iflags & IS_ALLOCATED; }
+bool is_allocated(std_arena *arena) { return arena->iflags & IS_ALLOCATED; }

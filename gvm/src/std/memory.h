@@ -10,11 +10,9 @@
  */
 typedef unsigned char byte;
 
-enum std_arena_flags {
+typedef enum std_arena_flags {
   ARENA_STOP_REALLOC = 1 << 0, // The arena's backing memory cannot be resized.
-};
-
-typedef enum std_arena_flags arena_flags;
+} std_arena_flags;
 
 /**
  * Memory storage type. Arenas store large chunks of contiguous memory, and
@@ -23,7 +21,7 @@ typedef enum std_arena_flags arena_flags;
  * be individually freed, though an arena can be cleaned for reuse using
  * [arena_clean].
  */
-typedef struct std_arena arena;
+typedef struct std_arena std_arena;
 
 /**
  * Initializes an arena [arena] of [size] bytes with [flags] flags. If the
@@ -31,7 +29,7 @@ typedef struct std_arena arena;
  * flag is set to [false]. If the allocation of the arena itself fails, then the
  * returned pointer is [NULL].
  */
-arena *arena_create(size_t size, arena_flags flags);
+std_arena *arena_create(size_t size, enum std_arena_flags flags);
 
 #define new_arena(size, flags)
 
@@ -48,14 +46,14 @@ arena *arena_create(size_t size, arena_flags flags);
  * The returned arena pointer is also located in this memory, and is destroyed
  * when [memory] is destroyed.
  */
-arena *arena_create_s(void *memory, size_t size, arena_flags flags);
+std_arena *arena_create_s(void *memory, size_t size, enum std_arena_flags flags);
 
 /**
  * Frees memory allocated by an arena and sets its [is_allocated] flag to
  * [false]. Accessing an arena pointer after calling [arena_delete] is undefined
  * behaviour.
  */
-void arena_destroy(arena *arena);
+void arena_destroy(std_arena *arena);
 
 /**
  * Allocate a pointer of [size] bytes within the arena. If allocation fails,
@@ -68,14 +66,14 @@ void arena_destroy(arena *arena);
  * arena's [is_allocated] flag is set to [false] and the function returns
  * [NULL].
  */
-void *arena_alloc(arena *arena, size_t size);
+void *arena_alloc(std_arena *arena, size_t size);
 
 /**
  * De-allocates all memory initialized within an arena. Accessing any previous
  * memory allocated within an arena after calling [arena_clean] is undefined
  * behaviour.
  */
-void arena_clean(arena *arena); 
+void arena_clean(std_arena *arena); 
 
 /**
  * Returns [true] if the backing memory for this arena is correctly allocated,
@@ -83,6 +81,6 @@ void arena_clean(arena *arena);
  * This should be run after an [arena_init] to ensure that the backing memory is
  * initialized correctly.
  */
-bool is_allocated(arena *arena); 
+bool is_allocated(std_arena *arena); 
 
 #endif // STD_MEMORY_H

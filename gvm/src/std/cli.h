@@ -3,34 +3,30 @@
 
 #include "std/strings.h"
 
-enum std_arg_type {
+typedef enum std_arg_type {
   ARG_OPTION,   // Is command line option (-a, --long)
   ARG_ARGUMENT, // Is command line argument (arg1)
   ARG_END,      // No further arguments or options available to parse.
-};
-
-typedef enum std_arg_type arg_type;
-
-struct std_argument {
-  union {
-    struct {
-      string name;
-      string arg;
-      bool has_arg;
-    } option;
-    struct {
-      string val;
-    } argument;
-  };
-  arg_type type;
-};
+} std_arg_type;
 
 /**
  * Argument holder, which contains a command line option or argument.
  * If [type] is [ARG_OPTION], then the union [option] is available.
  * If [type] is [ARG_ARGUMENT], then the union [argument] is available.
  */
-typedef struct std_argument argument;
+typedef struct std_argument {
+  union {
+    struct {
+      std_string name;
+      std_string arg;
+      bool has_arg;
+    } option;
+    struct {
+      std_string val;
+    } argument;
+  };
+  std_arg_type type;
+} std_argument;
 
 /**
  * Returns the next argument or option unparsed within [argv]. Repeated calls
@@ -52,7 +48,7 @@ typedef struct std_argument argument;
  * * [--long=arg] or [--long arg] provide the [--long] long option with the
  * argument [arg].
  */
-argument cli_argv_next(int argc, const char **argv);
+std_argument cli_argv_next(int argc, const char **argv);
 
 /**
  * Resets the state of argument parsing. Calling [next_argv] after calling this

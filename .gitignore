@@ -15,6 +15,7 @@
 # Build directories
 build/
 out/
+seed
 
 # Precompiled Headers
 *.gch

@@ -52,22 +52,22 @@
 /// containing the seed.h file.
 ///
 /// As an example, an application with five modules:
-///    root/
-///    ├─ lists/ (shared library -- used in all other modules)
-///    │  ├─ lists.c
-///    │  └─ lists.h
-///    ├─ text-renderer/ (top-level library module)
-///    │  ├─ unicode-handler/ (dependency library -- used by text-renderer.c)
-///    │  │  ├─ unicode.c
-///    │  │  └─ unicode.h
-///    │  └─ text-renderer.c
-///    ├─ renderer-gui/ (top-level executable module)
-///    │  ├─ graphics/ (dependency library -- used by main.c)
-///    │  │  ├─ renderer.c
-///    │  │  └─ renderer.h
-///    │  └─ main.c
-///    ├─ seed.c (build tooling)
-///    └─ seed.h (build tooling)
+///   src/
+///   ├─ lists/ (shared library -- used in all other modules)
+///   │  ├─ lists.c
+///   │  └─ lists.h
+///   ├─ text-renderer/ (top-level library module)
+///   │  ├─ unicode-handler/ (dependency library -- used by text-renderer.c)
+///   │  │  ├─ unicode.c
+///   │  │  └─ unicode.h
+///   │  └─ text-renderer.c
+///   ├─ renderer-gui/ (top-level executable module)
+///   │  ├─ graphics/ (dependency library -- used by main.c)
+///   │  │  ├─ renderer.c
+///   │  │  └─ renderer.h
+///   │  └─ main.c
+///   ├─ seed.c (build tooling)
+///   └─ seed.h (build tooling)
 
 #ifndef __SEED_H
 #define __SEED_H
@@ -273,12 +273,17 @@ static void sd_create_dir_if_not_exists(const char *name) {
 }
 
 void sd_compile_mod(sd_module *module) {
+  sd_create_dir_if_not_exists("build");
+
   // Compile all dependencies
   sd_list *cur = module->deps;
   while (cur != NULL) {
     sd_compile_mod(cur->module);
     cur = cur->next;
   }
+
+  // Compile module itself
+  // We depend on all files inside 
 }
 
 void sd_compile(void) { sd_create_dir_if_not_exists("build"); }

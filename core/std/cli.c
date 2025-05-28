@@ -1,5 +1,5 @@
 #include "cli.h"
-#include "std/strings.h"
+#include "strings.h"
 #include <stdbool.h>
 
 static int opt_cur = 1;

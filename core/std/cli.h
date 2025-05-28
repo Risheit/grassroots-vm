@@ -1,7 +1,7 @@
 #ifndef STD_CLI_H
 #define STD_CLI_H
 
-#include "std/strings.h"
+#include "strings.h"
 
 typedef enum std_arg_type {
   ARG_OPTION,   // Is command line option (-a, --long)

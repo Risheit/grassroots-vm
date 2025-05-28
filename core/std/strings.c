@@ -1,5 +1,5 @@
 #include "strings.h"
-#include "std/memory.h"
+#include "memory.h"
 #include <assert.h>
 #include <stddef.h>
 #include <string.h>

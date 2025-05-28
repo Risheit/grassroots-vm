@@ -1,7 +1,7 @@
 #ifndef STD_STRINGS_H
 #define STD_STRINGS_H
 
-#include "std/memory.h"
+#include "memory.h"
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>

@@ -1,5 +1,6 @@
 CompileFlags:
-  Add: [-x, c]
+  Add: 
+  - -xc
 
 Diagnostics:
   ClangTidy:
@@ -14,4 +15,5 @@ Diagnostics:
 If:
   PathMatch: .*\.h$
 CompileFlags:
-  Add: [-x, c-header]
+  Add: 
+  - -xc-header

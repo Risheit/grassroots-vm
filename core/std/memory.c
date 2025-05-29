@@ -24,7 +24,7 @@ std_arena *arena_create(size_t size, enum std_arena_flags flags) {
   std_arena *arena = calloc(1, sizeof *arena);
 
   if (arena == NULL)
-    return NULL;
+    return nullptr;
 
   byte *memory = malloc(size);
 

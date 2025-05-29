@@ -66,20 +66,6 @@ std_argument cli_argv_next(int argc, const char **argv) {
   // option found
   if (get_arg_type(this_arg) == ARG_OPTION) {
     std_argument opt = parse_opt(this_arg);
-
-    // Check if next CLI argument is an argument for this option, if the option
-    // didn't come with an argument.
-
-    if (opt_cur >= argc) // Skip if end of parsing
-      return opt;
-
-    std_string next_arg = str(argv[opt_cur]);
-    if (!opt.option.has_arg && get_arg_type(next_arg) == ARG_ARGUMENT) {
-      opt.option.has_arg = true;
-      opt.option.arg = next_arg;
-      opt_cur++;
-    }
-
     return opt;
   }
 

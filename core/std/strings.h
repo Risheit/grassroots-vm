@@ -36,7 +36,7 @@ std_string str_create(std_arena *arena, const char *buf);
  * until [max] characters are hit.
  *
  * This function assumes that the string buffer [buf] is externally managed.
- * Consider using this function over [str_alloc] when dealing with memory that
+ * Consider using this function over [str_create] when dealing with memory that
  * will be automatically freed, like stack-allocated strings.
  */
 std_string str(const char *buf);
@@ -62,7 +62,16 @@ size_t str_find(std_string str, char c);
 /**
  * Get the length of string [str].
  */
-inline size_t len(std_string str) { return str.len; }
+inline size_t len(std_string str) {
+  assert(str.err == 0);
+
+  return str.len;
+}
+
+/**
+ * Returns true iff the string is empty.
+ */
+inline bool str_empty(std_string str) { return len(str) == 0; }
 
 /**
  * Get the value of the string [str].

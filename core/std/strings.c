@@ -57,13 +57,9 @@ size_t str_find(std_string str, char c) {
 
 extern inline size_t len(std_string str); 
 
-/**
- * Get the value of the string [str].
- */
+extern inline bool str_empty(std_string str);
+
 extern inline const char *get(std_string str); 
 
-/**
- * Get the character at [at] in [str].
- */
 extern inline char at(std_string str, size_t at); 
 

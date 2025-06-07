@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <errno.h>
 
 /**
  * Prints formatted output to standard error.

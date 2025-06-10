@@ -2,24 +2,22 @@
 #define STD_STRINGS_H
 
 #include "memory.h"
+#include "types.h"
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 
+// Size of underlying raw data. This field can be changed without notice, and
+// shouldn't be referred to externally.
+#define _STD_STRING_RAW_SIZE (sizeof(uint64_t) * 3)
+
 /**
- * String view wrapper around raw char arrays.
- * While access to the raw data parts are provided, avoid accessing internal
- * fields directly, instead use provided manipulation functions.
- *
+ * String handle around raw char arrays.
  * The goal of string is to provide a clean, safe way to handle char arrays.
  */
 typedef struct std_string {
-  size_t len;
-  const char *buf;
-  uint_fast8_t err;
+  byte raw[_STD_STRING_RAW_SIZE];
 } std_string;
-
-#define STR_EMPTY (std_string){.buf = ""}
 
 /**
  * Initializes a dynamic string into [str] from a given null-terminated char
@@ -37,7 +35,8 @@ std_string str_create(std_arena *arena, const char *buf);
  *
  * This function assumes that the string buffer [buf] is externally managed.
  * Consider using this function over [str_create] when dealing with memory that
- * will be automatically freed, like stack-allocated strings.
+ * will be automatically freed, like stack-allocated strings or for read-only
+ * strings that will never be modified.
  */
 std_string str(const char *buf);
 
@@ -50,46 +49,50 @@ int str_compare(std_string a, std_string b);
 
 /**
  * Get the substring of [str] starting at (inclusive) [from] to (exclusive)
- * [end].
+ * [end]. Returns an empty string if [from] >= [to]. [from] and [to] must be
+ * greater than 0.
  */
-std_string str_substr(std_string str, size_t from, size_t to);
+std_string str_substr(std_string str, uint64_t from, uint64_t to);
 
 /**
  * Get the index location of the first occurrence of [c] in [str].
  */
-size_t str_find(std_string str, char c);
+uint64_t str_find(std_string str, char c);
 
 /**
  * Get the length of string [str].
  */
-inline size_t len(std_string str) {
-  assert(str.err == 0);
+uint64_t str_len(std_string str);
 
-  return str.len;
-}
+/**
+ * Returns an empty string.
+ */
+std_string str_empty();
 
 /**
  * Returns true iff the string is empty.
  */
-inline bool str_empty(std_string str) { return len(str) == 0; }
+bool str_isempty(std_string str);
 
 /**
  * Get the value of the string [str].
  */
-inline const char *get(std_string str) {
-  assert(str.err == 0);
-
-  return str.buf;
-}
+const char *str_get(std_string str);
 
 /**
- * Get the character at [at] in [str].
+ * Get the character at [at] in [str]. Throws an error if [at] is greater than
+ * the length of the string.
  */
-inline char at(std_string str, size_t at) {
-  assert(at >= 0);
-  assert(at < str.len);
+char str_at(std_string str, uint64_t at);
 
-  return str.buf[at];
-}
+/**
+ * Returns an invalid string.
+ */
+std_string str_bad();
+
+/**
+ * Returns a non-zero value if the string is invalid, and 0 if it is.
+ */
+int32_t str_err(std_string str);
 
 #endif // STD_STRINGS_H

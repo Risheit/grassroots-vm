@@ -9,21 +9,21 @@ static std_arg_type get_arg_type(std_string arg) {
   if (is_args_region)
     return ARG_ARGUMENT;
 
-  return at(arg, 0) == '-' ? ARG_OPTION : ARG_ARGUMENT;
+  return str_at(arg, 0) == '-' ? ARG_OPTION : ARG_ARGUMENT;
 }
 
 static std_argument parse_long_opt(std_string opt) {
   size_t split = str_find(opt, '=');
 
   // Found argument of type --long
-  if (split == len(opt))
+  if (split == str_len(opt))
     return (std_argument){
         .type = ARG_OPTION,
-        .option = {.arg = STR_EMPTY, .name = opt, .has_arg = false}};
+        .option = {.arg = str_empty(), .name = opt, .has_arg = false}};
 
   // Found argument of type --long=arg
   return (std_argument){.type = ARG_OPTION,
-                    .option = {.arg = str_substr(opt, split + 1, len(opt)),
+                    .option = {.arg = str_substr(opt, split + 1, str_len(opt)),
                                .name = str_substr(opt, 0, split),
                                .has_arg = true}};
 }
@@ -31,16 +31,16 @@ static std_argument parse_long_opt(std_string opt) {
 static std_argument parse_short_opt(std_string opt) {
   
   // Found argument of type -farg
-  if (len(opt) > 2)
+  if (str_len(opt) > 2)
     return (std_argument){.type = ARG_OPTION,
-                      .option = {.arg = str_substr(opt, 2, len(opt)),
+                      .option = {.arg = str_substr(opt, 2, str_len(opt)),
                                  .name = str_substr(opt, 0, 2),
                                  .has_arg = true}};
 
   // Found argument of type -f
   return (std_argument){
       .type = ARG_OPTION,
-      .option = {.arg = STR_EMPTY, .name = opt, .has_arg = false}};
+      .option = {.arg = str_empty(), .name = opt, .has_arg = false}};
 }
 
 static std_argument parse_opt(std_string opt) {

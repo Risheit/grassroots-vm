@@ -30,17 +30,23 @@ typedef enum std_fopen_state {
 } std_fopen_state;
 
 /**
- * Opens a file. On a failure, errno is set, and the file object returned is
- * marked with the relevant error number. Errno values are set according to the
- * [fopen] function.
+ * Opens a file. On a failure, errno is set as specified by [fopen], and the
+ * file returned is inactive and marked with the relevant error number.
  */
 std_file file_open(std_string name, std_fopen_state state);
 
 /**
- * Closes a file. On a failure, errno is set, and [file] is marked with the
- * relevant error number. Irregardless of success, the file object is marked
- * inactive. Errno values are set according to the [fclose] function. If an
- * inactive file is closed, nothing occurs, and [file] is marked with -1.
+ * Opens a temporary file in accordance with the function [tmpfile].
+ * On a failure, errno is set as specified by [tmpfile] and the file returned is
+ * inactive and marked with the relevant error number.
+ */
+std_file file_temp();
+
+/**
+ * Closes a file. On a failure, errno is set as specified by [fclose], and
+ * [file] is marked with the relevant error number. Irregardless of success, the
+ * file object is marked inactive. If an inactive file is closed, nothing
+ * occurs, and [file] is marked with -1.
  */
 void file_close(std_file *file);
 

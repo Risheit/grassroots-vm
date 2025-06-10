@@ -48,6 +48,19 @@ std_file file_open(std_string name, std_fopen_state state) {
   return file;
 }
 
+std_file file_temp() {
+  std_file file;
+  SET_FILE(file, tmpfile());
+
+  // Failed to open file.
+  if (!RAW(file).handle) {
+    RAW(file).err = errno;
+    RAW(file).active = false;
+  }
+
+  return file;
+}
+
 void file_close(std_file *file) {
   assert(file != NULL);
 
@@ -63,10 +76,6 @@ void file_close(std_file *file) {
   RAW(*file).active = false;
 }
 
-int32_t file_err(std_file file) {
-  return RAW(file).err; 
-}
+int32_t file_err(std_file file) { return RAW(file).err; }
 
-bool file_active(std_file file) {
-  return RAW(file).active;
-}
+bool file_active(std_file file) { return RAW(file).active; }

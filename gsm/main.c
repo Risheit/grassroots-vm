@@ -26,8 +26,8 @@
 
 #include "std/cli.h"
 #include "std/error.h"
-#include "std/strings.h"
 #include "std/file.h"
+#include "std/strings.h"
 #include <stdio.h>
 
 void gsm_first_pass(std_file ga_file, std_file store);
@@ -36,6 +36,7 @@ int main(int argc, const char **argv) {
   std_string file_name = str_empty();
 
   // Parse CLI arguments
+
   std_argument arg;
   do {
     arg = cli_argv_next(argc, argv);
@@ -70,5 +71,13 @@ int main(int argc, const char **argv) {
 
 // Performs a GSM first pass on [ga_file] and stores the result in [store].
 void gsm_first_pass(std_file ga_file, std_file store) {
+  // Inline macros.
 
+  // 1. Read line
+  // 2. If line starts with ![WORD] [expand] then store [WORD] -> [expand].
+  // 3. If line contains ![WORD] that has been found, replace it with [expand].
+
+
+
+  // Remove comments.
 }

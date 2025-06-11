@@ -18,6 +18,13 @@ typedef struct file_data {
   memcpy(file.raw, &(file_data){.handle = ptr, .err = 0, .active = true},      \
          _STD_FILE_RAW_SIZE)
 
+static_assert(sizeof(std_file) >= sizeof(file_data),
+              "String handle is smaller than data type. Increase the "
+              "string handle size in the strings.h header file.");
+static_assert(alignof(std_file) == alignof(file_data),
+              "String handle alignment is different from string type "
+              "alignment. Modify the string alignment in strings.h");
+
 static const char *fopen_string(std_fopen_state state) {
   switch (state) {
   case FOPEN_READ:
@@ -76,6 +83,6 @@ void file_close(std_file *file) {
   RAW(*file).active = false;
 }
 
-int32_t file_err(std_file file) { return RAW(file).err; }
+int32_t file_err(const std_file *file) { return RAW(*file).err; }
 
-bool file_active(std_file file) { return RAW(file).active; }
+bool file_active(const std_file *file) { return RAW(*file).active; }

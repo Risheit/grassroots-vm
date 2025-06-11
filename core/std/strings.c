@@ -1,5 +1,6 @@
 #include "strings.h"
 #include "memory.h"
+#include <_static_assert.h>
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
@@ -18,6 +19,13 @@ typedef struct str_data {
   memcpy(string.raw, &(str_data){.buf = data, .len = n, .err = error},         \
          _STD_STRING_RAW_SIZE)
 #define STR_VALID(str) assert(!str_err(str))
+
+static_assert(sizeof(std_string) >= sizeof(str_data),
+              "String handle is smaller than data type. Increase the "
+              "string handle size in the strings.h header file.");
+static_assert(alignof(std_string) == alignof(str_data),
+              "String handle alignment is different from string type "
+              "alignment. Modify the string alignment in strings.h");
 
 static std_string str_alloc_n(std_arena *arena, const char *buf, uint64_t n) {
   char *memory = arena_alloc(arena, n * sizeof(buf));
@@ -46,7 +54,6 @@ std_string str(const char *buf) {
 }
 
 int str_compare(std_string a, std_string b) {
-
   // Early length check to try and avoid full string comp
   if (str_len(a) != str_len(b))
     return str_len(a) > str_len(b) ? 1 : -1;

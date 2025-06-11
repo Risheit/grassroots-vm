@@ -1,6 +1,7 @@
 #ifndef STD_FILE_H
 #define STD_FILE_H
 
+#include "memory.h"
 #include "strings.h"
 #include "types.h"
 #include <stdbool.h>
@@ -9,12 +10,13 @@
 // Size of underlying raw data. This field can be changed without notice, and
 // shouldn't be referred to externally.
 #define _STD_FILE_RAW_SIZE (sizeof(void *) * 2)
+#define _STD_FILE_RAW_ALGN 8
 
 /**
  * Opaque handle type for files.
  */
 typedef struct std_file {
-  byte raw[_STD_FILE_RAW_SIZE];
+  alignas(_STD_FILE_RAW_ALGN) byte raw[_STD_FILE_RAW_SIZE];
 } std_file;
 
 /**
@@ -61,7 +63,7 @@ void file_close(std_file *file);
  * succeeded. It is recommended to check the error of the file after all
  * important function calls.
  */
-int32_t file_err(std_file file);
+int32_t file_err(const std_file *file);
 
 /**
  * Returns true if [file] is active, and false if not. Files are marked
@@ -69,6 +71,8 @@ int32_t file_err(std_file file);
  * become inoperable. All function calls on inactive files do nothing, and mark
  * the file with an error of -1.
  */
-bool file_active(std_file file);
+bool file_active(const std_file *file);
+
+std_string file_read_line(std_arena *arena, std_file *file);
 
 #endif // STD_FILE_H

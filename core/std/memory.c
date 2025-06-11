@@ -1,7 +1,5 @@
 #include "memory.h"
-#include "types.h"
 #include <assert.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -14,14 +12,14 @@ enum internal_flags {
 };
 
 struct std_arena {
-  uint64_t size;              // The arena size.
-  uint64_t offset;            // Current offset in memory.
+  size_t size;                // The arena size.
+  size_t offset;              // Current offset in memory.
   enum std_arena_flags flags; // Set arena flags.
   enum internal_flags iflags; // Set internal arena flags.
   byte *memory;               // Backing memory.
 };
 
-std_arena *arena_create(uint64_t size, enum std_arena_flags flags) {
+std_arena *arena_create(size_t size, enum std_arena_flags flags) {
   std_arena *arena = calloc(1, sizeof *arena);
 
   if (arena == NULL)
@@ -42,13 +40,13 @@ std_arena *arena_create(uint64_t size, enum std_arena_flags flags) {
 /**
  * Find offset to align [size] to word alignment.
  */
-static uint64_t align_forward(uint64_t size) {
-  const uint64_t alignment = 2 * sizeof(byte *);
+static size_t align_forward(size_t size) {
+  const size_t alignment = 2 * sizeof(byte *);
 
   return alignment - (size % alignment);
 }
 
-std_arena *arena_create_s(void *memory, uint64_t size, std_arena_flags flags) {
+std_arena *arena_create_s(void *memory, size_t size, std_arena_flags flags) {
   std_arena *arena = memory;
 
   assert(memory != NULL);
@@ -74,8 +72,8 @@ void arena_destroy(std_arena *arena) {
   *arena = (struct std_arena){0};
 }
 
-static void reallocate(std_arena *arena, uint64_t min_realloc) {
-  uint64_t realloc_amt = arena->size * 2;
+static void reallocate(std_arena *arena, size_t min_realloc) {
+  size_t realloc_amt = arena->size * 2;
 
   while (realloc_amt <= min_realloc)
     realloc_amt *= 2;
@@ -88,7 +86,7 @@ static void reallocate(std_arena *arena, uint64_t min_realloc) {
     arena->iflags |= IS_ALLOCATED;
 }
 
-void *arena_alloc(std_arena arena[static 1], uint64_t size) {
+void *arena_alloc(std_arena arena[static 1], size_t size) {
   bool allow_realloc =
       !(arena->flags & ARENA_STOP_REALLOC) && !(arena->iflags & IS_STACK);
 

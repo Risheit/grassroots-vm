@@ -2,7 +2,14 @@
 #define STD_MEMORY_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
+
+/**
+ * Convenience type of the smallest possible representation of data. This is a
+ * minimum of one byte.
+ */
+typedef uint_least8_t byte;
 
 typedef enum std_arena_flags {
   ARENA_STOP_REALLOC = 1 << 0, // The arena's backing memory cannot be resized.
@@ -23,7 +30,7 @@ typedef struct std_arena std_arena;
  * flag is set to [false]. If the allocation of the arena itself fails, then the
  * returned pointer is [NULL].
  */
-std_arena *arena_create(uint64_t size, enum std_arena_flags flags);
+std_arena *arena_create(size_t size, enum std_arena_flags flags);
 
 /**
  * Initializes the arena [arena] with [size] bytes and [flags] flags, associated
@@ -32,13 +39,13 @@ std_arena *arena_create(uint64_t size, enum std_arena_flags flags);
  * When creating an arena this way, it is assumed that [memory] and the [arena]
  * pointer are managed externally to the arena structure, and reallocations and
  * automatic memory freeing is prevented. Consider using this function instead
- * of [arena_init] when providing a backing memory and [arena] pointer that is
- * freed automatically, such as stack-allocated memory.
+ * of [arena_init] when providing a backing memory that is freed automatically,
+ * such as stack-allocated memory.
  *
  * The returned arena pointer is also located in this memory, and is destroyed
  * when [memory] is destroyed.
  */
-std_arena *arena_create_s(void *memory, uint64_t size,
+std_arena *arena_create_s(void *memory, size_t size,
                           enum std_arena_flags flags);
 
 /**
@@ -59,7 +66,7 @@ void arena_destroy(std_arena *arena);
  * arena's [is_allocated] flag is set to [false] and the function returns
  * [NULL].
  */
-void *arena_alloc(std_arena *arena, uint64_t size);
+void *arena_alloc(std_arena *arena, size_t size);
 
 /**
  * De-allocates all memory initialized within an arena. Accessing any previous

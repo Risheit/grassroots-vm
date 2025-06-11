@@ -13,7 +13,7 @@ static std_arg_type get_arg_type(std_string arg) {
 }
 
 static std_argument parse_long_opt(std_string opt) {
-  uint64_t split = str_find(opt, '=');
+  size_t split = str_find(opt, '=');
 
   // Found argument of type --long
   if (split == str_len(opt))

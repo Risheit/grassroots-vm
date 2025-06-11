@@ -6,10 +6,11 @@
 
 #define STR_VALID(str) assert(!str_err(str))
 
-static std_string str_alloc_n(std_arena *arena, const char *buf, uint64_t n) {
+static std_string str_alloc_n(std_arena *arena, const char *buf, size_t n) {
   char *memory = arena_alloc(arena, n * sizeof(buf));
 
-  std_string string = {._buf = nullptr, ._len = n, ._err = !memory};
+  std_string string = {
+      ._buf = nullptr, ._len = n, ._err = memory == NULL ? STERR_OMEM : 0};
 
   if (!memory)
     return string;
@@ -20,13 +21,17 @@ static std_string str_alloc_n(std_arena *arena, const char *buf, uint64_t n) {
 }
 
 std_string str_create(std_arena *arena, const char *buf) {
-  uint64_t n = strlen(buf);
+  size_t n = strlen(buf);
+  return str_alloc_n(arena, buf, n);
+}
+
+std_string str_create_n(std_arena *arena, const char *buf, size_t n) {
   return str_alloc_n(arena, buf, n);
 }
 
 std_string str(const char *buf) {
-  uint64_t n = strlen(buf);
-  std_string string = {._buf = buf, ._len = n, ._err = false};
+  size_t n = strlen(buf);
+  std_string string = {._buf = buf, ._len = n, ._err = 0};
   return string;
 }
 
@@ -38,7 +43,7 @@ int str_compare(std_string a, std_string b) {
   return strncmp(str_get(a), str_get(b), str_len(a));
 }
 
-std_string str_substr(std_string str, uint64_t from, uint64_t to) {
+std_string str_substr(std_string str, size_t from, size_t to) {
   STR_VALID(str);
   assert(from >= 0);
   assert(to >= 0);
@@ -46,17 +51,17 @@ std_string str_substr(std_string str, uint64_t from, uint64_t to) {
   if (from >= to)
     return str_empty();
 
-  uint64_t len = to > str_len(str) ? str_len(str) : to;
+  size_t len = to > str_len(str) ? str_len(str) : to;
   std_string string = {
       ._buf = str_get(str) + from, ._len = len - from, ._err = false};
 
   return string;
 }
 
-uint64_t str_find(std_string str, char c) {
+size_t str_find(std_string str, char c) {
   STR_VALID(str);
 
-  uint64_t i;
+  size_t i;
   for (i = 0; i < str_len(str); i++) {
     if (str_at(str, i) == c)
       return i;
@@ -64,15 +69,36 @@ uint64_t str_find(std_string str, char c) {
   return i;
 }
 
-uint64_t str_len(std_string str) {
+size_t str_len(std_string str) {
   STR_VALID(str);
 
   return str._len;
 }
 
+std_string str_append(std_arena *arena, std_string left, std_string right) {
+  size_t size = str_len(left) + str_len(right);
+
+  // Overflow with size.
+  if (size < str_len(left) || size < str_len(right))
+    return (std_string){._err = STERR_BIG};
+
+  // Allocate enough space for left and right, then copy them into the buffer in
+  // parts.
+  char *res = arena_alloc(arena, size * sizeof(left._buf));
+  if (res == NULL)
+    return (std_string){._err = STERR_OMEM};
+
+  strncpy(res, left._buf, str_len(left));
+  strncpy(res + str_len(left), right._buf, str_len(right));
+  return (std_string){._len = size, ._buf = res, ._err = 0};
+}
+
 std_string str_empty() {
-  std_string string = {._buf = "", ._len = 0, ._err = false};
-  return string;
+  return (std_string){._buf = "", ._len = 0, ._err = 0};
+}
+
+std_string str_null() {
+  return (std_string){._buf = "\0", ._len = 1, ._err = 0};
 }
 
 bool str_isempty(std_string str) {
@@ -85,7 +111,7 @@ const char *str_get(std_string str) {
   return str._buf;
 }
 
-char str_at(std_string str, uint64_t at) {
+char str_at(std_string str, size_t at) {
   STR_VALID(str);
   assert(at >= 0);
   assert(at < str._len);
@@ -94,7 +120,12 @@ char str_at(std_string str, uint64_t at) {
 }
 
 std_string str_bad() {
-  std_string string = {._buf = "", ._len = 0, ._err = true};
+  std_string string = {._buf = "", ._len = 0, ._err = STERR_TPOT};
+  return string;
+}
+
+std_string str_bad_ped(int32_t err) {
+  std_string string = {._buf = "", ._len = 0, ._err = err};
   return string;
 }
 

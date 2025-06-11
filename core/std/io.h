@@ -1,22 +1,20 @@
-#ifndef STD_FILE_H
-#define STD_FILE_H
+#ifndef STD_IO_H
+#define STD_IO_H
 
 #include "memory.h"
 #include "strings.h"
-#include "types.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-// Size of underlying raw data. This field can be changed without notice, and
-// shouldn't be referred to externally.
-#define _STD_FILE_RAW_SIZE (sizeof(void *) * 2)
-#define _STD_FILE_RAW_ALGN 8
+#include <stdio.h>
 
 /**
- * Opaque handle type for files.
+ * FILE pointer wrapper. Elements should be accessed using accessor functions
+ * rather than directly.
  */
 typedef struct std_file {
-  alignas(_STD_FILE_RAW_ALGN) byte raw[_STD_FILE_RAW_SIZE];
+  FILE *_handle;
+  int32_t _err;
+  bool _active;
 } std_file;
 
 /**
@@ -75,4 +73,4 @@ bool file_active(const std_file *file);
 
 std_string file_read_line(std_arena *arena, std_file *file);
 
-#endif // STD_FILE_H
+#endif // STD_IO_H

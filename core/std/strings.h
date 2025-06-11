@@ -2,20 +2,16 @@
 #define STD_STRINGS_H
 
 #include "memory.h"
-#include "types.h"
 #include <stdint.h>
 
-// Size and alignment of underlying raw data. This field can be changed without
-// notice, and shouldn't be referred to externally.
-#define _STD_STRING_RAW_SIZE (sizeof(uint64_t) * 3)
-#define _STD_STRING_RAW_ALGN 8
-
 /**
- * String handle around raw char arrays.
- * The goal of string is to provide a clean, safe way to handle char arrays.
+ * String wrapper around raw char arrays. Elements should be accessed using
+ * accessor functions rather than directly.
  */
 typedef struct std_string {
-  alignas(_STD_STRING_RAW_ALGN) byte raw[_STD_STRING_RAW_SIZE];
+  uint64_t _len;
+  const char *_buf;
+  int32_t _err;
 } std_string;
 
 /**

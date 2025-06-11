@@ -1,43 +1,21 @@
 #include "strings.h"
 #include "memory.h"
-#include <_static_assert.h>
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
 
-/**
- * Internal data type for std_string handle type.
- */
-typedef struct str_data {
-  uint64_t len;
-  const char *buf;
-  int32_t err;
-} str_data;
-
-#define RAW(handle) ((str_data *)(handle).raw)[0]
-#define SET_STR(string, data, n, error)                                        \
-  memcpy(string.raw, &(str_data){.buf = data, .len = n, .err = error},         \
-         _STD_STRING_RAW_SIZE)
 #define STR_VALID(str) assert(!str_err(str))
-
-static_assert(sizeof(std_string) >= sizeof(str_data),
-              "String handle is smaller than data type. Increase the "
-              "string handle size in the strings.h header file.");
-static_assert(alignof(std_string) == alignof(str_data),
-              "String handle alignment is different from string type "
-              "alignment. Modify the string alignment in strings.h");
 
 static std_string str_alloc_n(std_arena *arena, const char *buf, uint64_t n) {
   char *memory = arena_alloc(arena, n * sizeof(buf));
 
-  std_string string;
-  SET_STR(string, NULL, n, !memory);
+  std_string string = {._buf = nullptr, ._len = n, ._err = !memory};
 
   if (!memory)
     return string;
 
   strncpy(memory, buf, n);
-  RAW(string).buf = memory;
+  string._buf = memory;
   return string;
 }
 
@@ -48,8 +26,7 @@ std_string str_create(std_arena *arena, const char *buf) {
 
 std_string str(const char *buf) {
   uint64_t n = strlen(buf);
-  std_string string;
-  SET_STR(string, buf, n, false);
+  std_string string = {._buf = buf, ._len = n, ._err = false};
   return string;
 }
 
@@ -69,9 +46,9 @@ std_string str_substr(std_string str, uint64_t from, uint64_t to) {
   if (from >= to)
     return str_empty();
 
-  std_string string;
   uint64_t len = to > str_len(str) ? str_len(str) : to;
-  SET_STR(string, str_get(str) + from, len - from, false);
+  std_string string = {
+      ._buf = str_get(str) + from, ._len = len - from, ._err = false};
 
   return string;
 }
@@ -90,12 +67,11 @@ uint64_t str_find(std_string str, char c) {
 uint64_t str_len(std_string str) {
   STR_VALID(str);
 
-  return RAW(str).len;
+  return str._len;
 }
 
 std_string str_empty() {
-  std_string string;
-  SET_STR(string, "", 0, false);
+  std_string string = {._buf = "", ._len = 0, ._err = false};
   return string;
 }
 
@@ -106,21 +82,20 @@ bool str_isempty(std_string str) {
 
 const char *str_get(std_string str) {
   STR_VALID(str);
-  return RAW(str).buf;
+  return str._buf;
 }
 
 char str_at(std_string str, uint64_t at) {
   STR_VALID(str);
   assert(at >= 0);
-  assert(at < RAW(str).len);
+  assert(at < str._len);
 
-  return RAW(str).buf[at];
+  return str._buf[at];
 }
 
 std_string str_bad() {
-  std_string string;
-  SET_STR(string, "", 0, true);
+  std_string string = {._buf = "", ._len = 0, ._err = true};
   return string;
 }
 
-int32_t str_err(std_string str) { return RAW(str).err; }
+int32_t str_err(std_string str) { return str._err; }

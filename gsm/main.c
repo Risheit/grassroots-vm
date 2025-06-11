@@ -26,7 +26,7 @@
 
 #include "std/cli.h"
 #include "std/error.h"
-#include "std/file.h"
+#include "std/io.h"
 #include "std/strings.h"
 #include <stdio.h>
 
@@ -54,13 +54,13 @@ int main(int argc, const char **argv) {
 
   // Open GA file for reading
   std_file ga_file = file_open(file_name, FOPEN_READ);
-  if (file_err(ga_file)) {
+  if (file_err(&ga_file)) {
     perror("Couldn't open file");
     return 1;
   }
 
   std_file first_pass = file_temp();
-  if (file_err(first_pass)) {
+  if (file_err(&first_pass)) {
     perror("Couldn't create temporary file for assembler first pass");
     return 1;
   }

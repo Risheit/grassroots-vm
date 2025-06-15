@@ -124,9 +124,9 @@ std_string str_bad() {
   return string;
 }
 
-std_string str_bad_ped(int32_t err) {
+std_string str_bad_ped(int err) {
   std_string string = {._buf = "", ._len = 0, ._err = err};
   return string;
 }
 
-int32_t str_err(std_string str) { return str._err; }
+int str_err(std_string str) { return str._err; }

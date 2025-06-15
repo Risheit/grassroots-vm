@@ -12,13 +12,15 @@
 typedef struct std_string {
   size_t _len;
   const char *_buf;
-  int32_t _err;
+  int _err;
 } std_string;
 
-#define STERR_OMEM 1 // Out of memory to allocate string.
-#define STERR_BIG 2  // String to big to be stored (length field overflows).
-#define STERR_TPOT 3 // No reason given for bad string.
-#define STERR_READ 4 // Couldn't read into the string. Used for File IO.
+enum std_str_err {
+  STERR_OMEM = 1, // Out of memory to allocate string.
+  STERR_BIG = 2,  // String too big to be stored (length field overflows).
+  STERR_TPOT = 3, // No reason given for bad string.
+  STERR_READ = 4  // Couldn't read into the string. Used for File IO.
+};
 
 /**
  * Initializes a dynamic string into [str] from a given null-terminated char
@@ -109,13 +111,13 @@ std_string str_bad();
 /**
  * Returns an invalid string with a specific error code.
  */
-std_string str_bad_ped(int32_t err);
+std_string str_bad_ped(int err);
 
 /**
  * Returns the error code of the string if it is invalid, and 0 if there is no
  * problem. See associated [STERR_] string error codes in this header file for
  * the meaning of each code.
  */
-int32_t str_err(std_string str);
+int str_err(std_string str);
 
 #endif // STD_STRINGS_H

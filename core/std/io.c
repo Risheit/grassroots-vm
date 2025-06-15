@@ -12,17 +12,18 @@
 #include <sys/syslimits.h>
 
 #define RAW(file) (file)._handle
+#define RESET_ERR(file) (file)._err = 0
 
-static const char *fopen_string(std_fopen_state state) {
+static const char *fopen_string(std_fopen_state state, bool dont_overwrite) {
   switch (state) {
   case FOPEN_READ:
     return "r";
   case FOPEN_READPL:
     return "r+";
   case FOPEN_WRITE:
-    return "w";
+    return dont_overwrite ? "wx" : "w";
   case FOPEN_WRITEPL:
-    return "w+";
+    return dont_overwrite ? "wx+" : "w+";
   case FOPEN_APPEND:
     return "a";
   case FOPEN_APPENDPL:
@@ -30,14 +31,17 @@ static const char *fopen_string(std_fopen_state state) {
   }
 }
 
-std_file file_open(std_string name, std_fopen_state state) {
+std_file file_open(std_string name, std_fopen_state state,
+                   std_fopen_flags flags) {
   // Create a copy of [name] that is guaranteed to be null-terminated by
   // appending a null-terminator to the EOS.
   char buf[NAME_MAX + 1]; // Max path length buffer.
   std_arena *arena = arena_create_s(buf, (NAME_MAX + 1) * sizeof buf, 0);
   std_string safe_name = str_append(arena, name, str_null());
 
-  std_file file = {._handle = fopen(str_get(safe_name), fopen_string(state)),
+  std_file file = {._handle =
+                       fopen(str_get(safe_name),
+                             fopen_string(state, flags & FOPEN_NO_OVERWRITE)),
                    ._err = 0,
                    ._active = true};
 
@@ -64,6 +68,7 @@ std_file file_temp() {
 
 void file_close(std_file *file) {
   assert(file != NULL);
+  RESET_ERR(*file);
 
   // Action on inactive file
   if (!file->_active) {
@@ -78,7 +83,11 @@ void file_close(std_file *file) {
   file->_active = false;
 }
 
-std_string file_read_line(std_arena *arena, std_file *file) {
+std_string file_read_line(std_arena *restrict arena, std_file *restrict file) {
+  assert(arena != NULL);
+  assert(file != NULL);
+  RESET_ERR(*file);
+
   size_t len;
   char *line = fgetln(file->_handle, &len);
 
@@ -92,11 +101,33 @@ std_string file_read_line(std_arena *arena, std_file *file) {
       file->_err = errno;
       return str_bad_ped(STERR_READ);
     }
+
+    file->_err = 0;
   }
 
   return str_create(arena, line);
 }
 
-int32_t file_err(const std_file *file) { return file->_err; }
+size_t file_write(const void *restrict ptr, size_t size, size_t n,
+                  std_file *restrict file) {
+  assert(ptr != NULL);
+  assert(file != NULL);
+  RESET_ERR(*file);
 
-bool file_active(const std_file *file) { return file->_active; }
+  size_t write = fwrite(ptr, size, n, RAW(*file));
+  if (write < n) {
+    file->_err = FERR_WRITE;
+  } 
+
+  return write;
+}
+
+int file_err(const std_file *file) {
+  assert(file != NULL);
+  return file->_err;
+}
+
+bool file_active(const std_file *file) {
+  assert(file != NULL);
+  return file->_active;
+}

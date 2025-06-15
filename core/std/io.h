@@ -13,7 +13,7 @@
  */
 typedef struct std_file {
   FILE *_handle;
-  int32_t _err;
+  int _err;
   bool _active;
 } std_file;
 
@@ -29,14 +29,22 @@ typedef enum std_fopen_state {
   FOPEN_APPENDPL, // Equivalent to "a+"
 } std_fopen_state;
 
-#define FERR_INACTIVE -1 // Operation performed on inactive file.
-#define FERR_EOF -2      // Operation performed on EOF.
+typedef enum std_fopen_flags {
+  FOPEN_NO_OVERWRITE = 1, // Equivalent to adding "x" to a "w" or "w+" call.
+} std_fopen_flags;
+
+enum {
+  FERR_INACTIVE = -1, // Operation performed on inactive file.
+  FERR_EOF = -2,      // Operation performed on EOF.
+  FERR_WRITE = -3,    // Partially or completely failed a write operation.
+};
 
 /**
  * Opens a file. On a failure, errno is set as specified by [fopen], and the
  * file returned is inactive and marked with the relevant error number.
  */
-std_file file_open(std_string name, std_fopen_state state);
+std_file file_open(std_string name, std_fopen_state state,
+                   std_fopen_flags flags);
 
 /**
  * Opens a temporary file in accordance with the function [tmpfile].
@@ -62,7 +70,15 @@ void file_close(std_file *file);
  * contain a newline (in accordance with [fgetln]. On a read of EOF, an empty
  * string is returned, and [file] is marked with [FERR_EOF].
  */
-std_string file_read_line(std_arena *arena, std_file *file);
+std_string file_read_line(std_arena *restrict arena, std_file *restrict file);
+
+/**
+ * Writes [n] items to [file], each of size [size] from memory [ptr], with
+ * semantics equivalent to [fwrite]. If an error occurs and [fwrite] writes
+ * less than [n] items, then [file] is marked with [FERR_WRITE].
+ */
+size_t file_write(const void *restrict ptr, size_t size, size_t n,
+                  std_file *restrict file);
 
 /**
  * Returns the error code associated with [file]. This error code is set by
@@ -75,7 +91,7 @@ std_string file_read_line(std_arena *arena, std_file *file);
  * succeeded. It is recommended to check the error of the file after all
  * important function calls.
  */
-int32_t file_err(const std_file *file);
+int file_err(const std_file *file);
 
 /**
  * Returns true if [file] is active, and false if not. Files are marked

@@ -57,6 +57,7 @@ std_arena *arena_create_s(void *memory, size_t size, std_arena_flags flags) {
   // Adjust offset in [memory] to account for [arena] allocation.
   arena->offset = align_forward(sizeof(*arena)) + sizeof(*arena);
   arena->flags = flags;
+  arena->size = size;
   arena->iflags = IS_ALLOCATED | IS_STACK;
 
   return arena;

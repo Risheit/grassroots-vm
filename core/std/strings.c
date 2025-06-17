@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define STR_VALID(str) assert(!str_err(str))
+#define STR_VALID(str) assert(str_err(str) == 0)
 
 static std_string str_alloc_n(std_arena *arena, const char *buf, size_t n) {
   char *memory = arena_alloc(arena, n * sizeof(buf));

@@ -1,4 +1,5 @@
 #include "io.h"
+#include "error.h"
 #include "memory.h"
 #include "strings.h"
 #include <_stdio.h>
@@ -36,7 +37,7 @@ std_file file_open(std_string name, std_fopen_state state,
   // Create a copy of [name] that is guaranteed to be null-terminated by
   // appending a null-terminator to the EOS.
   char buf[NAME_MAX + 1]; // Max path length buffer.
-  std_arena *arena = arena_create_s(buf, (NAME_MAX + 1) * sizeof buf, 0);
+  std_arena *arena = arena_create_s(buf, (NAME_MAX + 1) * sizeof buf[0], 0);
   std_string safe_name = str_append(arena, name, str_null());
 
   std_file file = {._handle =

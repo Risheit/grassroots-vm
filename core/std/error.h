@@ -16,7 +16,6 @@ int eprintf(const char *restrict format, ...);
 #define _std_builtin_expect(e, v) (e)
 #endif
 
-// TODO: Get this set up
 #ifndef NDEBUG
 #define std_assert(e, format, ...)                                             \
   (_std_builtin_expect(!(e), 0)                                                \

@@ -3,7 +3,6 @@
 #include "memory.h"
 #include "strings.h"
 #include <_stdio.h>
-#include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
@@ -68,7 +67,7 @@ std_file file_temp() {
 }
 
 void file_close(std_file *file) {
-  assert(file != NULL);
+  std_nonnull(file);
   RESET_ERR(*file);
 
   // Action on inactive file
@@ -85,8 +84,8 @@ void file_close(std_file *file) {
 }
 
 std_string file_read_line(std_arena *restrict arena, std_file *restrict file) {
-  assert(arena != NULL);
-  assert(file != NULL);
+  std_nonnull(arena);
+  std_nonnull(file);
   RESET_ERR(*file);
 
   size_t len;
@@ -111,8 +110,8 @@ std_string file_read_line(std_arena *restrict arena, std_file *restrict file) {
 
 size_t file_write(const void *restrict ptr, size_t size, size_t n,
                   std_file *restrict file) {
-  assert(ptr != NULL);
-  assert(file != NULL);
+  std_nonnull(ptr);
+  std_nonnull(file);
   RESET_ERR(*file);
 
   size_t write = fwrite(ptr, size, n, RAW(*file));
@@ -124,11 +123,11 @@ size_t file_write(const void *restrict ptr, size_t size, size_t n,
 }
 
 int file_err(const std_file *file) {
-  assert(file != NULL);
+  std_nonnull(file);
   return file->_err;
 }
 
 bool file_active(const std_file *file) {
-  assert(file != NULL);
+  std_nonnull(file);
   return file->_active;
 }

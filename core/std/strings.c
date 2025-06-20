@@ -1,10 +1,11 @@
 #include "strings.h"
+#include "error.h"
 #include "memory.h"
-#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 
-#define STR_VALID(str) assert(str_err(str) == 0)
+#define STR_VALID(str)                                                         \
+  std_assert(str_err(str) == 0, "String has an error code %d", str_err(str))
 
 static std_string str_alloc_n(std_arena *arena, const char *buf, size_t n) {
   char *memory = arena_alloc(arena, n * sizeof(buf));
@@ -45,8 +46,8 @@ int str_compare(std_string a, std_string b) {
 
 std_string str_substr(std_string str, size_t from, size_t to) {
   STR_VALID(str);
-  assert(from >= 0);
-  assert(to >= 0);
+  std_assert(from >= 0, "index must be greater than 0");
+  std_assert(to >= 0, "index must be greater than 0");
 
   if (from >= to)
     return str_empty();
@@ -113,8 +114,7 @@ const char *str_get(std_string str) {
 
 char str_at(std_string str, size_t at) {
   STR_VALID(str);
-  assert(at >= 0);
-  assert(at < str._len);
+  std_assert(at < str._len, "index greater than string length");
 
   return str._buf[at];
 }

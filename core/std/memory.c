@@ -1,5 +1,5 @@
 #include "memory.h"
-#include <assert.h>
+#include "error.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -49,8 +49,11 @@ static size_t align_forward(size_t size) {
 std_arena *arena_create_s(void *memory, size_t size, std_arena_flags flags) {
   std_arena *arena = memory;
 
-  assert(memory != NULL);
-  assert(size > sizeof *arena);
+  std_nonnull(memory);
+  std_assert(
+      size > sizeof *arena,
+      "arena size must be able to contain an arena object (at least %d bytes)",
+      sizeof *arena);
 
   memset(arena, 0, sizeof *arena);
   arena->memory = memory;
@@ -91,8 +94,8 @@ void *arena_alloc(std_arena arena[static 1], size_t size) {
   bool allow_realloc =
       !(arena->flags & ARENA_STOP_REALLOC) && !(arena->iflags & IS_STACK);
 
-  assert(is_allocated(arena));
-  assert(size > 0);
+  std_assert(is_allocated(arena), "arena memory must exist");
+  std_assert(size > 0, "arena size must be positive");
 
   if (arena->size < size + arena->offset) {
     if (allow_realloc)

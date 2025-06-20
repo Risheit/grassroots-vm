@@ -15,7 +15,7 @@ typedef struct std_string {
   int _err;
 } std_string;
 
-enum std_str_err {
+enum {
   STERR_OMEM = 1, // Out of memory to allocate string.
   STERR_BIG = 2,  // String too big to be stored (length field overflows).
   STERR_TPOT = 3, // No reason given for bad string.

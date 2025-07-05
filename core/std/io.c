@@ -12,7 +12,13 @@
 #include <sys/syslimits.h>
 
 #define RAW(file) (file)._handle
-#define RESET_ERR(file) (file)._err = 0
+#define ACTIVE(file)                                                           \
+  do {                                                                         \
+    if (!(file)._handle) {                                                     \
+      (file)._err = errno;                                                     \
+      (file)._active = false;                                                  \
+    }                                                                          \
+  } while (0)
 
 static const char *fopen_string(std_fopen_state state, bool dont_overwrite) {
   switch (state) {
@@ -68,13 +74,7 @@ std_file file_temp() {
 
 void file_close(std_file *file) {
   std_nonnull(file);
-  RESET_ERR(*file);
-
-  // Action on inactive file
-  if (!file->_active) {
-    file->_err = FERR_INACTIVE;
-    return;
-  }
+  ACTIVE(*file);
 
   int ret = fclose(file->_handle);
   if (ret != 0) {
@@ -86,7 +86,7 @@ void file_close(std_file *file) {
 std_string file_read_line(std_arena *restrict arena, std_file *restrict file) {
   std_nonnull(arena);
   std_nonnull(file);
-  RESET_ERR(*file);
+  ACTIVE(*file);
 
   size_t len;
   char *line = fgetln(file->_handle, &len);
@@ -97,12 +97,10 @@ std_string file_read_line(std_arena *restrict arena, std_file *restrict file) {
       file->_err = FERR_EOF;
       return str_empty();
     }
-    if (ferror(RAW(*file))) {
+    if (ferror(RAW(*file))) { // Error reached
       file->_err = errno;
       return str_bad_ped(STERR_READ);
     }
-
-    file->_err = 0;
   }
 
   return str_create(arena, line);
@@ -112,19 +110,51 @@ size_t file_write(const void *restrict ptr, size_t size, size_t n,
                   std_file *restrict file) {
   std_nonnull(ptr);
   std_nonnull(file);
-  RESET_ERR(*file);
+  ACTIVE(*file);
 
   size_t write = fwrite(ptr, size, n, RAW(*file));
   if (write < n) {
     file->_err = FERR_WRITE;
-  } 
+  }
 
   return write;
+}
+
+void file_flush(std_file *file) {
+  std_nonnull(file);
+  ACTIVE(*file);
+  
+  int res = fflush(RAW(*file));
+  if (!res)
+    file->_err = errno;
+}
+
+long file_tell(std_file *file) {
+  std_nonnull(file);
+  ACTIVE(*file);
+  
+  long offset = ftell(RAW(*file));
+  if (offset == -1)
+    file->_err = errno;
+
+  return offset;
+}
+
+void file_seek(std_file *file, long offset, int whence) {
+  std_nonnull(file);
+  ACTIVE(*file);
+
+  int res = fseek(RAW(*file), offset, whence);
 }
 
 int file_err(const std_file *file) {
   std_nonnull(file);
   return file->_err;
+}
+
+void file_reset_err(std_file *file) {
+  std_nonnull(file);
+  file->_err = 0;
 }
 
 bool file_active(const std_file *file) {

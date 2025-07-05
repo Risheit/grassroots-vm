@@ -28,9 +28,16 @@
 #include "std/cli.h"
 #include "std/error.h"
 #include "std/io.h"
+#include "std/memory.h"
 #include "std/strings.h"
 #include <stdint.h>
-#include <stdio.h>
+
+const uint32_t g_gsm_guard = 0x0a0d0d0a;
+const uint32_t g_gsm_magic = 0x4F434247;
+const uint8_t g_gsm_major = 1;
+const uint8_t g_gsm_minor = 0;
+const uint8_t g_gsm_patch = 0;
+const uint8_t g_gsm_unused = 0;
 
 int32_t gsm_first_pass(std_file *restrict ga_file, std_file *restrict store);
 int32_t gsm_second_pass(std_file *restrict ga_file,
@@ -114,16 +121,27 @@ int32_t gsm_second_pass(std_file *restrict ga_file,
   //    0-alpha prefix)
 
   // Add GBC file header (See GBC file spec for more details on these)
-  int32_t guard = 0x0a0d0d0a;
-  int32_t magic = 0x4F434247;
 
-  file_write(&guard, sizeof guard, 1, gbc_file);
-  if (file_err(gbc_file))
-    return 1;
+  file_write(&g_gsm_guard, sizeof g_gsm_guard, 1, gbc_file);
+  file_write(&g_gsm_magic, sizeof g_gsm_magic, 1, gbc_file);
+  file_write(&g_gsm_major, sizeof g_gsm_major, 1, gbc_file);
+  file_write(&g_gsm_minor, sizeof g_gsm_minor, 1, gbc_file);
+  file_write(&g_gsm_patch, sizeof g_gsm_patch, 1, gbc_file);
+  file_write(&g_gsm_unused, sizeof g_gsm_unused, 1, gbc_file);
 
-  file_write(&magic, sizeof magic, 1, gbc_file);
+  long instr_start_mark = file_tell(gbc_file);
+
+  file_seek(ga_file, 0, SEEK_SET);
+
   if (file_err(gbc_file))
-    return 1;
+    return file_err(gbc_file);
+
+  // Begin reading lines from the GA file
+  std_arena *line_memory = arena_create(0, 0);
+  while (file_err(ga_file) == 0) {
+    std_string line = file_read_line(line_memory, ga_file);
+
+  }
 
   return 0;
 }

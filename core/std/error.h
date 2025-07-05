@@ -17,6 +17,10 @@ int eprintf(const char *restrict format, ...);
 #endif
 
 #ifndef NDEBUG
+/**
+ * Exits the program if the given expression is true, printing a (printf)
+ * formatted message.
+ */
 #define std_assert(e, format, ...)                                             \
   (_std_builtin_expect(!(e), 0)                                                \
        ? _std_builtin_assert(__FILE_NAME__, __func__, __LINE__, e, #e,         \
@@ -33,6 +37,6 @@ int eprintf(const char *restrict format, ...);
  */
 _Noreturn void _std_builtin_assert(const char *filename, const char *func,
                                    int line, int expr, const char *err,
-                                   const char *format, ...);
-
+                                   const char *format, ...)
+    __attribute__((format(printf, 6, 7)));
 #endif // STD_ERROR_H

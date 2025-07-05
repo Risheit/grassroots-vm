@@ -52,7 +52,7 @@ std_arena *arena_create_s(void *memory, size_t size, std_arena_flags flags) {
   std_nonnull(memory);
   std_assert(
       size > sizeof *arena,
-      "arena size must be able to contain an arena object (at least %d bytes)",
+      "arena size must be able to contain an arena object (at least %lu bytes)",
       sizeof *arena);
 
   memset(arena, 0, sizeof *arena);

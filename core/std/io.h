@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 /**
- * FILE pointer wrapper. Elements should be accessed using accessor functions
+ * [FILE *] wrapper. Elements should be accessed using accessor functions
  * rather than directly.
  */
 typedef struct std_file {
@@ -74,30 +74,60 @@ std_string file_read_line(std_arena *restrict arena, std_file *restrict file);
 
 /**
  * Writes [n] items to [file], each of size [size] from memory [ptr], with
- * semantics equivalent to [fwrite]. If an error occurs and [fwrite] writes
- * less than [n] items, then [file] is marked with [FERR_WRITE].
+ * semantics equivalent to [fwrite]. If an error occurs and less than [n] items
+ * are written to the file, then [file] is marked with [FERR_WRITE]. Returns the
+ * number of items wrote.
  */
 size_t file_write(const void *restrict ptr, size_t size, size_t n,
                   std_file *restrict file);
 
 /**
+ * Flushes any buffered I/O to [file] with semantics equivalent to [fflush]. If
+ * an error occurs, then errno is set and [file] is marked with the relevant
+ * error number.
+ */
+void file_flush(std_file *file);
+
+/**
+ * Returns the current value of the file position indicator, with semantics
+ * equivalent to [ftell]. If an error occurs, then -1 is returned, errno is set
+ * as specified by [ftell], and [file] is marked with the relevant error number.
+ */
+long file_tell(std_file *file);
+
+/**
+ * Sets the position offset of [file], with semantics equivalent to [fseek].
+ * [whence] can be set to SEEK_SET, SEEK_CUR, or SEEK_END. If an error occurs,
+ * then errno is set as specified by [fseek] and [file] is marked with the
+ * relevant error number.
+ */
+void file_seek(std_file *file, long offset, int whence);
+
+/**
  * Returns the error code associated with [file]. This error code is set by
- * functions the last function to act on this file. The error code is equivalent
- * to errno values set by the called function. If the last function call on this
- * file succeeded, then this function returns 0.
+ * functions the last function on this file that fails.
+ * The error code is equivalent to errno values set by the called function,
+ * with negative error codes equivalent to their respective FERR_ error codes.
  *
- * Note: It is possible for a file to have an error of 0 in spite of having an
- * had an error called on it, if a subsequent function call on the file
- * succeeded. It is recommended to check the error of the file after all
- * important function calls.
+ * Note: successful calls don't set the file error code to 0. If a previous
+ * function sets an error code, that code will remain on the file until cleared
+ * by the [file_reset_err] function. If a function does error, it overwrites the
+ * previous error value on the file. If the error code of a function is
+ * important, store or check the error code with [file_err] before calling
+ * another file function.
  */
 int file_err(const std_file *file);
 
 /**
+ * Resets the error code associated with [file] to 0.
+ */
+void file_reset_err(std_file *file);
+
+/**
  * Returns true if [file] is active, and false if not. Files are marked
  * inactive after they are closed, or if a critical error causes the file to
- * become inoperable. All function calls on inactive files do nothing, and mark
- * the file with an error of [FERR_INACTIVE].
+ * become inoperable. All file manipulation functions on inactive files do
+ * nothing, and mark the file with an error of [FERR_INACTIVE].
  */
 bool file_active(const std_file *file);
 

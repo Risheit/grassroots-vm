@@ -2,6 +2,7 @@
 #include "error.h"
 #include "memory.h"
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #define STR_VALID(str)                                                         \
@@ -59,6 +60,68 @@ std_string str_substr(std_string str, size_t from, size_t to) {
   return string;
 }
 
+struct std_str_token {
+  size_t pos;         // The current position in the string.
+  std_string value;   // The substring value.
+  std_string *parent; // The parent string.
+  char split;         // The split character
+};
+
+void str_tokenize(std_str_token *token, std_string string, char split) {
+  STR_VALID(string);
+
+  size_t start, end;
+  for (start = 0; start < str_len(string); start++) {
+    if (str_at(string, start) != split)
+      break;
+  }
+
+  for (end = start; end < str_len(string); end++) {
+    if (str_at(string, end) == split)
+      break;
+  }
+
+  token->pos = end;
+  token->parent = &string;
+  token->value = str_substr(string, start, end);
+  token->split = split;
+}
+
+bool str_token_next(std_str_token *token) {
+  std_nonnull(token);
+
+  if (token->pos > str_len(*token->parent)) {
+    return false;
+  }
+
+  if (token->pos == str_len(*token->parent)) {
+    token->pos++; // Increase past end of string so that token get calls can
+                  // fail after end of string.
+    return false;
+  }
+
+  size_t start, end;
+  for (start = token->pos; start < str_len(*token->parent); start++) {
+    if (str_at(*token->parent, start) != token->split)
+      break;
+  }
+
+  for (end = start; end < str_len(*token->parent); end++) {
+    if (str_at(*token->parent, end) == token->split)
+      break;
+  }
+
+  token->value = str_substr(*token->parent, start, end);
+  return true;
+}
+
+std_string str_token_get(std_str_token *token) {
+  std_nonnull(token);
+  if (token->pos > str_len(*token->parent))
+    return str_bad_ped(STERR_READ);
+  return token->value;
+}
+
 size_t str_find(std_string str, char c) {
   STR_VALID(str);
 
@@ -72,7 +135,6 @@ size_t str_find(std_string str, char c) {
 
 size_t str_len(std_string str) {
   STR_VALID(str);
-
   return str._len;
 }
 

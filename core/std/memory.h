@@ -13,6 +13,8 @@ typedef uint_least8_t byte;
 
 typedef enum std_arena_flags {
   ARENA_STOP_REALLOC = 1 << 0, // The arena's backing memory cannot be resized.
+  CONTINUE_ON_ALLOC_FAILURE = 1 << 1, // Whether this arena should not panic if
+                                      // backing memory fails to be allocated.
 } std_arena_flags;
 
 /**
@@ -26,9 +28,10 @@ typedef struct std_arena std_arena;
 
 /**
  * Initializes an arena [arena] of initial [size] bytes with [flags] flags. If
- * the allocation of an arena's backing memory fails, the arena's [is_allocated]
- * flag is set to [false]. If the allocation of the arena itself fails, then the
- * returned pointer is [NULL].
+ * the allocation of an arena's backing memory or allocation of the arena itself
+ * fails, then this function panics, unless [CONTINUE_ON_ALLOC_FAILURE] is
+ * set, in which case it defines the arena's memory as unallocated, or
+ * returns [NULL], respectively.
  */
 std_arena *arena_create(size_t size, enum std_arena_flags flags);
 
@@ -57,14 +60,15 @@ void arena_destroy(std_arena *arena);
 
 /**
  * Allocate a pointer of [size] bytes within the arena. If allocation fails,
- * returns [NULL].
+ * this function panics, unless [CONTINUE_ON_ALLOC_FAILURE] is set, in which
+ * case it returns [NULL].
  * By default, if a pointer allocation would cause the arena to run out of
  * space, this function reallocates more space to the arena. If
  * [ARENA_DISALLOW_REALLOC] is set or the arena is allocated on the stack, then
- * if the arena would reallocate memory, return NULL instead.
- * If an arena memory reallocation occurs and fails during this call, the
- * arena's [is_allocated] flag is set to [false] and the function returns
- * [NULL].
+ * if the arena would reallocate memory, it fails instead. If an arena memory
+ * reallocation occurs and fails during this call and
+ * [CONTINUE_ON_ALLOC_FAILURE] is set, the arena's [is_allocated] flag is
+ * set to [false] and the function returns [NULL].
  */
 void *arena_alloc(std_arena *arena, size_t size);
 
@@ -78,8 +82,6 @@ void arena_clean(std_arena *arena);
 /**
  * Returns [true] if the backing memory for this arena is correctly allocated,
  * and [false] otherwise.
- * This should be run after an [arena_init] to ensure that the backing memory is
- * initialized correctly.
  */
 bool is_allocated(std_arena *arena);
 

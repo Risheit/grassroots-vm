@@ -22,8 +22,11 @@ struct std_arena {
 std_arena *arena_create(size_t size, enum std_arena_flags flags) {
   std_arena *arena = calloc(1, sizeof *arena);
 
-  if (arena == NULL)
+  if (arena == NULL) {
+    if (!(flags & CONTINUE_ON_ALLOC_FAILURE))
+      std_panic("Failed to allocate memory for arena object");
     return nullptr;
+  }
 
   byte *memory = malloc(size);
 
@@ -31,8 +34,12 @@ std_arena *arena_create(size_t size, enum std_arena_flags flags) {
   arena->size = size;
   arena->flags = flags;
 
-  if (memory != NULL)
-    arena->iflags |= IS_ALLOCATED;
+  if (memory != NULL) {
+    arena->flags |= IS_ALLOCATED;
+  } else {
+    if (!(flags & CONTINUE_ON_ALLOC_FAILURE))
+      std_panic("Failed to allocate arena's backing memory");
+  }
 
   return arena;
 }
@@ -52,7 +59,7 @@ std_arena *arena_create_s(void *memory, size_t size, std_arena_flags flags) {
   std_nonnull(memory);
   std_assert(
       size > sizeof *arena,
-      "arena size must be able to contain an arena object (at least %lu bytes)",
+      "arena size must be able to contain an arena object (at least %zu bytes)",
       sizeof *arena);
 
   memset(arena, 0, sizeof *arena);
@@ -91,20 +98,26 @@ static void reallocate(std_arena *arena, size_t min_realloc) {
 }
 
 void *arena_alloc(std_arena arena[static 1], size_t size) {
-  bool allow_realloc =
-      !(arena->flags & ARENA_STOP_REALLOC) && !(arena->iflags & IS_STACK);
-
   std_assert(is_allocated(arena), "arena memory must exist");
-  std_assert(size > 0, "arena size must be positive");
 
   if (arena->size < size + arena->offset) {
+    bool allow_realloc =
+        !(arena->flags & ARENA_STOP_REALLOC) && !(arena->iflags & IS_STACK);
+
     if (allow_realloc)
       reallocate(arena, size + arena->offset);
-    else
-      return NULL;
+    else {
+      if (!(arena->flags & CONTINUE_ON_ALLOC_FAILURE))
+        std_panic("Failed to allocate %zu bytes", size);
+      return nullptr;
+    }
 
     if (!is_allocated(arena)) // Reallocation failed
-      return NULL;
+    {
+      if (!(arena->flags & CONTINUE_ON_ALLOC_FAILURE))
+        std_panic("Failed to reallocate backing memory.");
+      return nullptr;
+    }
   }
 
   byte *ptr = arena->memory + arena->offset;

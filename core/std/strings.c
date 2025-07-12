@@ -47,8 +47,6 @@ int str_compare(std_string a, std_string b) {
 
 std_string str_substr(std_string str, size_t from, size_t to) {
   STR_VALID(str);
-  std_assert(from >= 0, "index must be greater than 0");
-  std_assert(to >= 0, "index must be greater than 0");
 
   if (from >= to)
     return str_empty();

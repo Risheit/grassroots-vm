@@ -19,7 +19,9 @@ int eprintf(const char *restrict format, ...);
 #ifndef NDEBUG
 /**
  * Exits the program if the given expression is true, printing a (printf)
- * formatted message.
+ * formatted message. Asserts are stripped out of code in production
+ * environments (when [NDEBUG] is not defined), and should not be used to handle
+ * regular control flow.
  */
 #define std_assert(e, format, ...)                                             \
   (_std_builtin_expect(!(e), 0)                                                \
@@ -31,6 +33,20 @@ int eprintf(const char *restrict format, ...);
 #endif
 
 #define std_nonnull(e) std_assert((e) != NULL, #e " should not be null")
+
+/**
+ * Forcefully exits the program with an error code.
+ */
+#define std_panic(format, ...)                                                 \
+  _std_builtin_panic(__FILE_NAME__, __func__, __LINE__,                        \
+                     format __VA_OPT__(, ) __VA_ARGS__)
+
+/**
+ * Standard library panic function. Use [std_panic].
+ */
+_Noreturn void _std_builtin_panic(const char *filename, const char *func,
+                                  int line, const char *format, ...)
+    __attribute__((format(printf, 4, 5)));
 
 /**
  * Standard library assert function. Use [std_assert].

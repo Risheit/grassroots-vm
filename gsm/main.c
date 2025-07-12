@@ -141,6 +141,11 @@ int32_t gsm_second_pass(std_file *restrict ga_file,
   while (file_err(ga_file) == 0) {
     std_string line = file_read_line(line_memory, ga_file);
 
+    std_str_token *token;
+    char space = ' ';
+    str_tokenize(token, line, space);
+
+    // TODO: Read tokens from a GA line and write its bytecode to the gbc file.
   }
 
   return 0;

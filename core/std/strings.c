@@ -174,7 +174,9 @@ const char *str_get(std_string str) {
 
 char str_at(std_string str, size_t at) {
   STR_VALID(str);
-  std_assert(at < str._len, "index greater than string length");
+
+  if (at >= str._len)
+    std_panic("index greater than string length");
 
   return str._buf[at];
 }

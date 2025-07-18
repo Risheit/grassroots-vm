@@ -8,8 +8,8 @@
 #include <stdio.h>
 
 /**
- * [FILE *] wrapper. Elements should be accessed using accessor functions
- * rather than directly.
+ * [FILE *] wrapper for handling file I/O. Elements should be accessed using
+ * accessor functions rather than directly.
  */
 typedef struct std_file {
   FILE *_handle;
@@ -76,7 +76,7 @@ std_string file_read_line(std_arena *restrict arena, std_file *restrict file);
  * Writes [n] items to [file], each of size [size] from memory [ptr], with
  * semantics equivalent to [fwrite]. If an error occurs and less than [n] items
  * are written to the file, then [file] is marked with [FERR_WRITE]. Returns the
- * number of items wrote.
+ * number of items written.
  */
 size_t file_write(const void *restrict ptr, size_t size, size_t n,
                   std_file *restrict file);

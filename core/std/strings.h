@@ -9,7 +9,19 @@
 /**
  * String wrapper around raw char arrays. Elements should be accessed using
  * accessor functions rather than directly.
- * Strings are immutable.
+ *
+ * Strings are immutable, and strings might arbitrarily refer to the same
+ * internal [char] buffer if they are related. When a string is created
+ * directly from a buffer using a function like [str], further modification of
+ * that char buffer outside of string functions is undefined behaviour.
+ *
+ * A note on lifetimes:
+ * Strings operate under the assumption that their underlying buffer will be
+ * valid for the duration of the string's lifetime. Undefined behaviour occurs
+ * if a backing string buffer, or an arena containing the backing string buffer
+ * goes out of scope. Be careful when using standard strings as return values
+ * that the underlying buffer is static, or has been allocated in an arena that
+ * will continue to exist after function return.
  */
 typedef struct std_string {
   size_t _len;
@@ -27,7 +39,8 @@ enum {
 /**
  * Initializes a dynamic string into [str] from a given null-terminated char
  * array constant [buf], allocating it to the arena [arena]. [buf] is copied
- * until it reaches the null terminator, or until [max] characters are hit.
+ * until it reaches the null terminator. Calling this function on a non
+ * null-terminated string is undefined behaviour.
  *
  * On an error, the [err] field of string is set to a non-zero value.
  */
@@ -35,13 +48,14 @@ std_string str_create(std_arena *arena, const char *buf);
 
 /**
  * Initializes a string into [str] from a given null-terminated char array
- * constant [buf]. [buf] is copied until it reaches the null-terminator, or
- * until [max] characters are hit.
+ * constant [buf]. [buf] is copied until it reaches the null-terminator. Calling
+ * this function on a non null-terminated string is undefined behaviour.
  *
- * This function assumes that the string buffer [buf] is externally managed.
+ * This function assumes that the string buffer [buf] is externally managed and
+ * will not change or be deallocated while the returned string is in scope.
  * Consider using this function over [str_create] when dealing with memory that
- * will be automatically freed, like stack-allocated strings or for read-only
- * strings that will never be modified.
+ * will be automatically freed, like stack-allocated [char] arrays or for
+ * read-only [const char] arrays that will never be modified.
  */
 std_string str(const char *buf);
 
@@ -54,8 +68,7 @@ int str_compare(std_string a, std_string b);
 
 /**
  * Get the substring of [str] starting at (inclusive) [from] to (exclusive)
- * [end]. Returns an empty string if [from] >= [to]. [from] and [to] must be
- * greater than 0.
+ * [end]. Returns an empty string if [from] >= [to].
  */
 std_string str_substr(std_string str, size_t from, size_t to);
 
@@ -67,20 +80,18 @@ typedef struct std_str_token std_str_token;
 /**
  * Tokenizes the string [str], splitting it into substrings at each instance of
  * [split], excluding the [split] character. The first token substring is stored
- * in [token]. The next token can be retrieved by calling [str_token_next]. The 
+ * in [token]. The next token can be retrieved by calling [str_token_next]. The
  * substring the token signifies can be retrieved by calling [str_token_get].
  *
- * Multiple sequential [split] characters are ignored, for example, for a split character "C",
- * "CHelloCCWorldC" -> ["Hello", "World"]
- *
- * Note that tokenization occurs in place, and no token substring can outlive its parent [str] 
- * type.
+ * Multiple sequential [split] characters are ignored, for example, for a split
+ * character "C", "CHelloCCWorldC" -> ["Hello", "World"]
  */
 void str_tokenize(std_str_token *token, std_string str, char split);
 
 /**
- * Returns the next token substring for [token]. Returns true if it could do this successfully,
- * and false if the end of string is reached, and the token is set to contain an error string.
+ * Returns the next token substring for [token]. Returns true if it could do
+ * this successfully. Otherwise, return false if the end of string is reached,
+ * with the token set to contain an error string.
  */
 bool str_token_next(std_str_token *token);
 
@@ -101,7 +112,7 @@ size_t str_len(std_string str);
 
 /**
  * Appends [left] to [right] and stores it in [arena]. If [arena] cannot store
- * the appended strings, an error string is returned.
+ * the appended strings and doesn't panic, an error string is returned.
  */
 std_string str_append(std_arena *arena, std_string left, std_string right);
 
@@ -124,14 +135,15 @@ bool str_isempty(std_string str);
 
 /**
  * Get the underlying buffer of the string [str].
+ *
  * Note that this buffer is not guaranteed to be null-terminated! Cap all
  * interactions with raw buffers with the string's length using [str_len].
  */
 const char *str_get(std_string str);
 
 /**
- * Get the character at [at] in [str]. Throws an error if [at] is greater than
- * the length of the string.
+ * Get the character at the index [at] in [str]. Throws an error if [at] is
+ * past the end of the string.
  */
 char str_at(std_string str, size_t at);
 

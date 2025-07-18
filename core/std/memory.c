@@ -84,7 +84,7 @@ void arena_destroy(std_arena *arena) {
 }
 
 static void reallocate(std_arena *arena, size_t min_realloc) {
-  size_t realloc_amt = arena->size * 2;
+  size_t realloc_amt = arena->size != 0 ? arena->size * 2 : 1;
 
   while (realloc_amt <= min_realloc)
     realloc_amt *= 2;

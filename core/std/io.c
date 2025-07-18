@@ -123,7 +123,7 @@ size_t file_write(const void *restrict ptr, size_t size, size_t n,
 void file_flush(std_file *file) {
   std_nonnull(file);
   ACTIVE(*file);
-  
+
   int res = fflush(RAW(*file));
   if (!res)
     file->_err = errno;
@@ -132,7 +132,7 @@ void file_flush(std_file *file) {
 long file_tell(std_file *file) {
   std_nonnull(file);
   ACTIVE(*file);
-  
+
   long offset = ftell(RAW(*file));
   if (offset == -1)
     file->_err = errno;

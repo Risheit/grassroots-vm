@@ -18,6 +18,7 @@
       (file)._err = errno;                                                     \
       (file)._active = false;                                                  \
     }                                                                          \
+    std_assert((file)._active, #file " should be active");                     \
   } while (0)
 
 static const char *fopen_string(std_fopen_state state, bool dont_overwrite) {

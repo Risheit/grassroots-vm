@@ -14,17 +14,43 @@
  */
 
 #include "std/cli.h"
+#include "std/error.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef struct test_node {
+  std_string test_file;
+  struct test_node *next;
+} test_node;
+
 int main(int argc, const char **argv) {
+  std_arena *arena = arena_create(sizeof(test_node), 0);
+  test_node *head = nullptr;
 
   // Parse the options given to find any important flags and ensure valid
   // input.
   std_argument arg = cli_argv_next(argc, argv);
   while (arg.type != ARG_END) {
-    if (is_option(arg, str("-h")) || is_option(arg, str("--help"))) {
+    if (cli_is_option(arg, str("-h")) || cli_is_option(arg, str("--help"))) {
+      printf("%s [-f file | --file=file] ... [-d dir | --dir=dir] ...\n",
+             argv[0]);
+      printf("-f, --file: Runs the given test file.\n");
+      printf("-d, --dir: Runs all the files in [dir] as tests.\n");
+    } else if (cli_is_option(arg, str("-f")) ||
+               cli_is_option(arg, str("--file"))) {
+      if (!arg.option.has_arg)
+        std_panic("Missing argument filename for -f or --file option");
+
+      test_node *new_test = arena_alloc(arena, sizeof *new_test);
+      new_test->test_file = arg.option.arg;
+      new_test->next = head;
+      head = new_test;
+    } else if (cli_is_option(arg, str("-d")) ||
+               cli_is_option(arg, str("--dir"))) {
+      if (!arg.option.has_arg)
+        std_panic("Missing argument dirname for -f or --file option");
+      // TODO: Implement directory parsing for test files.
     }
   }
 
@@ -43,5 +69,6 @@ int main(int argc, const char **argv) {
     fprintf(stderr, "\nIn total, there were %d failing tests.\n", failed_tests);
   }
 
+  arena_destroy(arena);
   return 0;
 }

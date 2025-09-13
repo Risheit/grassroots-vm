@@ -89,6 +89,6 @@ void cli_argv_reset() {
   g_is_args_region = false;
 }
 
-bool is_option(std_argument arg, std_string name) {
+bool cli_is_option(std_argument arg, std_string name) {
   return arg.type == ARG_OPTION && str_compare(arg.option.name, name) == 0;
 }

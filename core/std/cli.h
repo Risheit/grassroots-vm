@@ -71,6 +71,6 @@ void cli_argv_reset();
  * Returns true if and only if [arg] is a CLI option, and it has the name
  * [name]. Note that option names including any preceding "-" characters.
  */
-bool is_option(std_argument arg, std_string name);
+bool cli_is_option(std_argument arg, std_string name);
 
 #endif // STD_CLI_H

@@ -104,10 +104,11 @@ long file_tell(std_file *file);
 void file_seek(std_file *file, long offset, int whence);
 
 /**
- * Returns the error code associated with [file]. This error code is set by
- * functions the last function on this file that fails.
- * The error code is equivalent to errno values set by the called function,
- * with negative error codes equivalent to their respective FERR_ error codes.
+ * Returns the error code associated with [file]. The error code of a file is 0
+ * if there is no error present. This error code is set by functions the last
+ * function on this file that fails. The error code is equivalent to errno
+ * values set by the called function, with negative error codes equivalent to
+ * their respective FERR_ error codes.
  *
  * Note: successful calls don't set the file error code to 0. If a previous
  * function sets an error code, that code will remain on the file until cleared

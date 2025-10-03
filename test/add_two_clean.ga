@@ -1,4 +1,4 @@
-main:
+.main
 ori 'a '0 0xFFFF
 ori 'b '0 165
 add 'srg 'a 'b

@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void errno_msg(const char *msg) {
+  perror(msg);
+}
+
 __attribute__((format(printf, 1, 2))) int eprintf(const char *restrict format,
                                                   ...) {
   va_list args;

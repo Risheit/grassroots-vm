@@ -3,7 +3,11 @@
 
 #include <errno.h>
 #include <stdarg.h>
-#include <stdio.h>
+
+/**
+ * Equivalent to standard stdio.h [perror] function.
+ */
+void errno_msg(const char *msg);
 
 /**
  * Prints formatted output to standard error.

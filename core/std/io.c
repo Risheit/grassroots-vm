@@ -21,6 +21,12 @@
     std_assert((file)._active, #file " should be active");                     \
   } while (0)
 
+typedef struct std_file {
+  FILE *_handle;
+  int _err;
+  bool _active;
+} std_file;
+
 static const char *fopen_string(std_fopen_state state, bool dont_overwrite) {
   switch (state) {
   case FOPEN_READ:
@@ -38,36 +44,45 @@ static const char *fopen_string(std_fopen_state state, bool dont_overwrite) {
   }
 }
 
-std_file file_open(std_string name, std_fopen_state state,
-                   std_fopen_flags flags) {
+std_file *file_open(std_arena *arena, std_string name, std_fopen_state state,
+                    std_fopen_flags flags) {
   // Create a copy of [name] that is guaranteed to be null-terminated by
   // appending a null-terminator to the EOS.
   char buf[NAME_MAX + 1]; // Max path length buffer.
-  std_arena *arena = arena_create_s(buf, (NAME_MAX + 1) * sizeof buf[0], 0);
-  std_string safe_name = str_append(arena, name, str_null());
+  std_arena *working_memory =
+      arena_create_s(buf, (NAME_MAX + 1) * sizeof buf[0], 0);
 
-  std_file file = {._handle =
-                       fopen(str_get(safe_name),
-                             fopen_string(state, flags & FOPEN_NO_OVERWRITE)),
-                   ._err = 0,
-                   ._active = true};
+  std_string safe_name = str_append(working_memory, name, str_null());
+
+  std_file *file = arena_alloc(arena, sizeof(std_file));
+  if (!file) {
+    return nullptr;
+  }
+
+  file->_handle = fopen(str_get(safe_name),
+                        fopen_string(state, flags & FOPEN_NO_OVERWRITE));
+  file->_err = 0;
+  file->_active = true;
 
   // Failed to open file.
-  if (!file._handle) {
-    file._err = errno;
-    file._active = false;
+  if (!RAW(*file)) {
+    file->_err = errno;
+    file->_active = false;
   }
 
   return file;
 }
 
-std_file file_temp() {
-  std_file file = {._handle = tmpfile(), ._err = 0, ._active = true};
+std_file *file_temp(std_arena *arena) {
+  std_file *file = arena_alloc(arena, sizeof(std_file));
+  file->_handle = tmpfile();
+  file->_err = 0;
+  file->_active = true;
 
   // Failed to open file.
-  if (!RAW(file)) {
-    file._err = errno;
-    file._active = false;
+  if (!RAW(*file)) {
+    file->_err = errno;
+    file->_active = false;
   }
 
   return file;

@@ -58,30 +58,32 @@ int main(int argc, const char **argv) {
     return 1;
   }
 
+  std_arena *working_memory = arena_create(0, 0);
+
   // Open GA file for reading
-  std_file ga_file = file_open(file_name, FOPEN_READ, 0);
-  if (file_err(&ga_file)) {
-    perror("Couldn't open GA file");
+  std_file *ga_file = file_open(working_memory, file_name, FOPEN_READ, 0);
+  if (file_err(ga_file)) {
+    errno_msg("Couldn't open GA file");
     return 2;
   }
 
-  std_file first_pass = file_temp();
-  if (file_err(&first_pass)) {
-    perror("Couldn't create temporary file for assembler first pass");
+  std_file *first_pass = file_temp(working_memory);
+  if (file_err(first_pass)) {
+    errno_msg("Couldn't create temporary file for assembler first pass");
     return 3;
   }
 
-  std_file out_file = file_open(str("a.out"), FOPEN_WRITE, 0);
-  if (file_err(&out_file)) {
-    perror("Couldn't create output file");
+  std_file *out_file = file_open(working_memory, str("a.out"), FOPEN_WRITE, 0);
+  if (file_err(out_file)) {
+    errno_msg("Couldn't create output file");
     return 4;
   }
 
   // Copy GA file into temporary, inlining any macros.
-  gsm_first_pass(&ga_file, &first_pass);
+  gsm_first_pass(ga_file, first_pass);
 
   // Create GBC file
-  gsm_second_pass(&first_pass, &out_file);
+  gsm_second_pass(first_pass, out_file);
 }
 
 // Performs a GSM first pass on [ga_file] and stores the result in [store].
@@ -163,20 +165,19 @@ int32_t gsm_second_pass(std_file *restrict ga_file,
     gbc_command command;
 
     uint32_t bytecode;
-    std_string opcode_string = str_token_get(token);
 
-    uint32_t opcode = get_opcode(opcode_string);
+    uint32_t opcode = get_opcode(str_token_get(token));
     bytecode |= opcode << OPCODE_SHFT;
 
     switch (opcode) {
     case OPCODE_CODE1: // imm | rx1 | func | opcode
-      uint32_t func = get_code1_func(opcode_string);
+      uint32_t func = get_code1_func(str_token_get(token));
       bytecode |= func << CODE1_FNC_SHFT;
 
-      uint32_t rx1 = get_register(opcode_string);
+      uint32_t rx1 = get_register(str_token_get(token));
       bytecode |= rx1 << CODE1_RX1_SHFT;
 
-      uint32_t imm = bytecode & CODE1_IMM;
+      uint32_t imm = eprintf("bytecode: %x", bytecode);
 
     case OPCODE_CODE3: // rx3 | rx2 | rx1 | 000 | func | opcode
 

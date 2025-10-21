@@ -5,17 +5,12 @@
 #include "strings.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 
 /**
  * [FILE *] wrapper for handling file I/O. Elements should be accessed using
  * accessor functions rather than directly.
  */
-typedef struct std_file {
-  FILE *_handle;
-  int _err;
-  bool _active;
-} std_file;
+typedef struct std_file std_file;
 
 /**
  * Open states of a file. These are equivalent to fopen states.
@@ -42,16 +37,18 @@ enum {
 /**
  * Opens a file. On a failure, errno is set as specified by [fopen], and the
  * file returned is inactive and marked with the relevant error number.
+ * If the file fails to allocate, then [NULL] is returned.
  */
-std_file file_open(std_string name, std_fopen_state state,
-                   std_fopen_flags flags);
+std_file *file_open(std_arena *arena, std_string name, std_fopen_state state,
+                    std_fopen_flags flags);
 
 /**
  * Opens a temporary file in accordance with the function [tmpfile].
  * On a failure, errno is set as specified by [tmpfile] and the file returned is
- * inactive and marked with the relevant error number.
+ * inactive and marked with the relevant error number. If the file fails to
+ * allocate, then [NULL] is returned.
  */
-std_file file_temp();
+std_file *file_temp(std_arena *arena);
 
 /**
  * Closes a file. On a failure, errno is set as specified by [fclose], and

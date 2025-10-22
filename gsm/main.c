@@ -144,7 +144,7 @@ int32_t gsm_second_pass(std_file *restrict ga_file,
 
   long instr_start_mark = file_tell(gbc_file);
 
-  file_seek(ga_file, 0, SEEK_SET);
+  file_seek(ga_file, 0, FSEEK_SET);
 
   if (file_err(gbc_file))
     return file_err(gbc_file);

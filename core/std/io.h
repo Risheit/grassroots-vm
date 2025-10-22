@@ -93,12 +93,21 @@ void file_flush(std_file *file);
 long file_tell(std_file *file);
 
 /**
+ * Standard [whence] values allowed for [file_seek].
+ */
+typedef enum std_file_seek {
+  FSEEK_SET = 0, // Seeks to the beginning of the file.
+  FSEEK_CUR = 1, // Seeks to the current file position.
+  FSEEK_END = 2, // Seeks to the end of the file.
+} std_file_seek;
+
+/**
  * Sets the position offset of [file], with semantics equivalent to [fseek].
- * [whence] can be set to SEEK_SET, SEEK_CUR, or SEEK_END. If an error occurs,
+ * [whence] can be set to [FSEEK_SET], [FSEEK_CUR], or [FSEEK_END]. If an error occurs,
  * then errno is set as specified by [fseek] and [file] is marked with the
  * relevant error number.
  */
-void file_seek(std_file *file, long offset, int whence);
+void file_seek(std_file *file, long offset, std_file_seek whence);
 
 /**
  * Returns the error code associated with [file]. The error code of a file is 0

@@ -2,30 +2,30 @@
 #include "error.h"
 #include "memory.h"
 #include "strings.h"
-#include <_stdio.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/syslimits.h>
 
-#define RAW(file) (file)._handle
+typedef struct std_file {
+  FILE *handle;
+  int err;
+  bool active;
+} std_file;
+
+#define RAW(file) (file).handle
 #define ACTIVE(file)                                                           \
   do {                                                                         \
-    if (!(file)._handle) {                                                     \
-      (file)._err = errno;                                                     \
-      (file)._active = false;                                                  \
+    if (!(file).handle) {                                                      \
+      (file).err = errno;                                                      \
+      (file).active = false;                                                   \
     }                                                                          \
-    std_assert((file)._active, #file " should be active");                     \
+    std_assert((file).active, #file " should be active");                      \
   } while (0)
-
-typedef struct std_file {
-  FILE *_handle;
-  int _err;
-  bool _active;
-} std_file;
 
 static const char *fopen_string(std_fopen_state state, bool dont_overwrite) {
   switch (state) {
@@ -59,15 +59,15 @@ std_file *file_open(std_arena *arena, std_string name, std_fopen_state state,
     return nullptr;
   }
 
-  file->_handle = fopen(str_get(safe_name),
-                        fopen_string(state, flags & FOPEN_NO_OVERWRITE));
-  file->_err = 0;
-  file->_active = true;
+  file->handle = fopen(str_get(safe_name),
+                       fopen_string(state, flags & FOPEN_NO_OVERWRITE));
+  file->err = 0;
+  file->active = true;
 
   // Failed to open file.
   if (!RAW(*file)) {
-    file->_err = errno;
-    file->_active = false;
+    file->err = errno;
+    file->active = false;
   }
 
   return file;
@@ -75,14 +75,14 @@ std_file *file_open(std_arena *arena, std_string name, std_fopen_state state,
 
 std_file *file_temp(std_arena *arena) {
   std_file *file = arena_alloc(arena, sizeof(std_file));
-  file->_handle = tmpfile();
-  file->_err = 0;
-  file->_active = true;
+  file->handle = tmpfile();
+  file->err = 0;
+  file->active = true;
 
   // Failed to open file.
   if (!RAW(*file)) {
-    file->_err = errno;
-    file->_active = false;
+    file->err = errno;
+    file->active = false;
   }
 
   return file;
@@ -92,11 +92,11 @@ void file_close(std_file *file) {
   std_nonnull(file);
   ACTIVE(*file);
 
-  int ret = fclose(file->_handle);
+  int ret = fclose(file->handle);
   if (ret != 0) {
-    file->_err = errno;
+    file->err = errno;
   }
-  file->_active = false;
+  file->active = false;
 }
 
 std_string file_read_line(std_arena *restrict arena, std_file *restrict file) {
@@ -105,16 +105,16 @@ std_string file_read_line(std_arena *restrict arena, std_file *restrict file) {
   ACTIVE(*file);
 
   size_t len;
-  char *line = fgetln(file->_handle, &len);
+  char *line = fgetln(file->handle, &len);
 
   // Failed to read line
   if (line == NULL) {
     if (feof(RAW(*file))) { // EOF reached
-      file->_err = FERR_EOF;
+      file->err = FERR_EOF;
       return str_empty();
     }
     if (ferror(RAW(*file))) { // Error reached
-      file->_err = errno;
+      file->err = errno;
       return str_bad_ped(STERR_READ);
     }
   }
@@ -130,7 +130,7 @@ size_t file_write(const void *restrict ptr, size_t size, size_t n,
 
   size_t write = fwrite(ptr, size, n, RAW(*file));
   if (write < n) {
-    file->_err = FERR_WRITE;
+    file->err = FERR_WRITE;
   }
 
   return write;
@@ -142,7 +142,7 @@ void file_flush(std_file *file) {
 
   int res = fflush(RAW(*file));
   if (!res)
-    file->_err = errno;
+    file->err = errno;
 }
 
 long file_tell(std_file *file) {
@@ -151,29 +151,42 @@ long file_tell(std_file *file) {
 
   long offset = ftell(RAW(*file));
   if (offset == -1)
-    file->_err = errno;
+    file->err = errno;
 
   return offset;
 }
 
-void file_seek(std_file *file, long offset, int whence) {
+void file_seek(std_file *file, long offset, std_file_seek whence) {
   std_nonnull(file);
   ACTIVE(*file);
 
-  int res = fseek(RAW(*file), offset, whence);
+  int sys_whence; // System whence value based on stdio.h
+  switch (whence) {
+  case FSEEK_SET:
+    sys_whence = SEEK_SET;
+    break;
+  case FSEEK_CUR:
+    sys_whence = SEEK_CUR;
+    break;
+  case FSEEK_END:
+    sys_whence = SEEK_END;
+    break;
+  }
+
+  int res = fseek(RAW(*file), offset, sys_whence);
 }
 
 int file_err(const std_file *file) {
   std_nonnull(file);
-  return file->_err;
+  return file->err;
 }
 
 void file_reset_err(std_file *file) {
   std_nonnull(file);
-  file->_err = 0;
+  file->err = 0;
 }
 
 bool file_active(const std_file *file) {
   std_nonnull(file);
-  return file->_active;
+  return file->active;
 }

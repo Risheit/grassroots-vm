@@ -22,9 +22,8 @@ struct std_arena {
 std_arena *arena_create(size_t size, enum std_arena_flags flags) {
   std_arena *arena = calloc(1, sizeof *arena);
 
-  if (arena == NULL) {
-    if (!(flags & CONTINUE_ON_ALLOC_FAILURE))
-      std_panic("Failed to allocate memory for arena object");
+  if (arena == NULL && !(flags & CONTINUE_ON_ALLOC_FAILURE)) {
+    std_panic("Failed to allocate memory for arena object");
     return nullptr;
   }
 
@@ -35,10 +34,9 @@ std_arena *arena_create(size_t size, enum std_arena_flags flags) {
   arena->flags = flags;
 
   if (memory != NULL) {
-    arena->flags |= IS_ALLOCATED;
-  } else {
-    if (!(flags & CONTINUE_ON_ALLOC_FAILURE))
-      std_panic("Failed to allocate arena's backing memory");
+    arena->iflags |= IS_ALLOCATED;
+  } else if (!(flags & CONTINUE_ON_ALLOC_FAILURE)) {
+    std_panic("Failed to allocate arena's backing memory");
   }
 
   return arena;

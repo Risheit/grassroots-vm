@@ -18,14 +18,7 @@ typedef struct std_file {
 } std_file;
 
 #define RAW(file) (file).handle
-#define ACTIVE(file)                                                           \
-  do {                                                                         \
-    if (!(file).handle) {                                                      \
-      (file).err = errno;                                                      \
-      (file).active = false;                                                   \
-    }                                                                          \
-    std_assert((file).active, #file " should be active");                      \
-  } while (0)
+#define ACTIVE(file) std_assert((file).active, #file " should be active")
 
 static const char *fopen_string(std_fopen_state state, bool dont_overwrite) {
   switch (state) {
@@ -48,9 +41,9 @@ std_file *file_open(std_arena *arena, std_string name, std_fopen_state state,
                     std_fopen_flags flags) {
   // Create a copy of [name] that is guaranteed to be null-terminated by
   // appending a null-terminator to the EOS.
-  char buf[NAME_MAX + 1]; // Max path length buffer.
+  char buf[ARENA_META_SIZE + NAME_MAX + 1]; // Max path length buffer.
   std_arena *working_memory =
-      arena_create_s(buf, (NAME_MAX + 1) * sizeof buf[0], 0);
+      arena_create_s(buf, (ARENA_META_SIZE + NAME_MAX + 1) * sizeof buf[0], 0);
 
   std_string safe_name = str_append(working_memory, name, str_null());
 

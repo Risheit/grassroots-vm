@@ -84,6 +84,8 @@ int main(int argc, const char **argv) {
 
   // Create GBC file
   gsm_second_pass(first_pass, out_file);
+
+  arena_destroy(working_memory);
 }
 
 // Performs a GSM first pass on [ga_file] and stores the result in [store].

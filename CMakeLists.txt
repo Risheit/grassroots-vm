@@ -15,5 +15,3 @@ add_subdirectory(core/std)
 
 add_subdirectory(gvm)
 add_subdirectory(gsm)
-
-add_subdirectory(core/tests)

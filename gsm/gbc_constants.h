@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdint.h>
 
 // Type definitions for a GBC command. See
@@ -33,11 +35,11 @@ typedef uint32_t gbc_command;
 
 // Code 3 Masks
 
-#define CODE3_FNC 0x00003FC0
+#define CODE3_FNC 0x00001FC0
 #define CODE3_FNC_SHFT 6
 
-#define CODE3_XXX 0x0001C000 // Unused
-#define CODE3_XXX_SHFT 14
+#define CODE3_XXX 0x0001E000 // Unused bits
+#define CODE3_XXX_SHFT 13
 
 #define CODE3_RX1 0x003E0000
 #define CODE3_RX1_SHFT 17
@@ -48,8 +50,17 @@ typedef uint32_t gbc_command;
 #define CODE3_RX3 0xF8000000
 #define CODE3_RX3_SHFT 27
 
+// Code 4 Masks
+
+#define CODE4_XXX 0x00000040 // Unused bits
+#define CODE4_XXX_SHFT 6
+
+#define CODE4_IMM 0xFFFFFF00
+#define CODE4_IMM_SHFT 8
+
 // Opcode representations
 
+// Code 2
 #define OPCODE_CODE1 0x3F
 #define OPCODE_CODE3 0x00
 #define OPCODE_ADDI 0x02
@@ -63,9 +74,15 @@ typedef uint32_t gbc_command;
 #define OPCODE_LW 0x0C
 #define OPCODE_LH 0x0D
 #define OPCODE_LB 0x0E
-#define OPCODE_SW 0x0F
-#define OPCODE_SH 0x10
-#define OPCODE_SB 0x11
+#define OPCODE_SW 0x10
+#define OPCODE_SH 0x11
+#define OPCODE_SB 0x12
+#define OPCODE_EQ 0x13
+#define OPCODE_GT 0x14
+#define OPCODE_LT 0x15
+
+// Code 4
+#define OPCODE_SYS 0x0F
 
 // Code 1 function representations
 
@@ -76,7 +93,6 @@ typedef uint32_t gbc_command;
 #define FUNC_PUSH 0x05
 #define FUNC_POP 0x06
 #define FUNC_ZERO 0x07
-#define FUNC_SYS 0x08
 
 // Code 3 function representations
 
@@ -91,9 +107,6 @@ typedef uint32_t gbc_command;
 #define FUNC_AND 0x0C
 #define FUNC_OR 0x0D
 #define FUNC_XOR 0x0E
-#define FUNC_EQ 0x0F
-#define FUNC_GT 0x10
-#define FUNC_LT 0x11
 #define FUNC_EQX 0x12
 #define FUNC_GTX 0x13
 #define FUNC_LTX 0x14
@@ -131,7 +144,7 @@ typedef uint32_t gbc_command;
 
 const uint32_t g_gsm_guard = 0x0a0d0d0a;
 const uint32_t g_gsm_magic = 0x4F434247;
-const uint8_t g_gsm_major = 1;
-const uint8_t g_gsm_minor = 0;
+const uint8_t g_gsm_major = 0;
+const uint8_t g_gsm_minor = 1;
 const uint8_t g_gsm_patch = 0;
 const uint8_t g_gsm_unused = 0;

@@ -2,10 +2,8 @@
 
 set(EXE_NAME gsm)
 
-add_executable(${EXE_NAME} main.c)
-target_link_libraries(gsm PRIVATE std)
-target_include_directories(gsm PRIVATE ${PROJECT_BINARY_DIR}
-                                       "${PROJECT_SOURCE_DIR}/core/include")
+add_executable(${EXE_NAME} main.c assembler.c)
+target_link_libraries(gsm PRIVATE CCORE::std)
 
 # Apple requires binaries to be signed to access certain folders (ex.
 # Documents). This signs the binary locally to allow access.

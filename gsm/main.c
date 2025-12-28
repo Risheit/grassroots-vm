@@ -35,13 +35,13 @@
 #include <stdint.h>
 
 int main(int argc, const char **argv) {
-  std_string file_name = str_empty();
+  std_string file_name = std_str_empty();
 
   // Parse CLI arguments
 
   std_argument arg;
   do {
-    arg = cli_argv_next(argc, argv);
+    arg = std_cli_argv_next(argc, argv);
 
     if (arg.type == ARG_ARGUMENT) { // First arg is the name of the file.
       file_name = arg.argument.val;
@@ -50,29 +50,30 @@ int main(int argc, const char **argv) {
   } while (arg.type != ARG_END);
 
   // No file name passed in
-  if (str_isempty(file_name)) {
-    eprintf("Invalid file name provided\n");
+  if (std_str_is_empty(file_name)) {
+    std_eprintf("Invalid file name provided\n");
     return 1;
   }
 
-  std_arena *working_memory = arena_create(0, 0);
+  std_arena *working_memory = std_arena_create(0, 0);
 
   // Open GA file for reading
-  std_file *ga_file = file_open(working_memory, file_name, FOPEN_READ, 0);
-  if (file_err(ga_file)) {
-    errno_msg("Couldn't open GA file");
+  std_file *ga_file = std_file_open(working_memory, file_name, FOPEN_READ, 0);
+  if (std_file_err(ga_file)) {
+    std_errno_msg("Couldn't open GA file");
     return 2;
   }
 
-  std_file *first_pass = file_temp(working_memory);
-  if (file_err(first_pass)) {
-    errno_msg("Couldn't create temporary file for assembler first pass");
+  std_file *first_pass = std_file_temp(working_memory);
+  if (std_file_err(first_pass)) {
+    std_errno_msg("Couldn't create temporary file for assembler first pass");
     return 3;
   }
 
-  std_file *out_file = file_open(working_memory, str("a.out"), FOPEN_WRITE, 0);
-  if (file_err(out_file)) {
-    errno_msg("Couldn't create output file");
+  std_file *out_file =
+      std_file_open(working_memory, str("a.out"), FOPEN_WRITE, 0);
+  if (std_file_err(out_file)) {
+    std_errno_msg("Couldn't create output file");
     return 4;
   }
 
@@ -82,5 +83,5 @@ int main(int argc, const char **argv) {
   // Create GBC file
   gsm_second_pass(first_pass, out_file);
 
-  arena_destroy(working_memory);
+  std_arena_destroy(working_memory);
 }

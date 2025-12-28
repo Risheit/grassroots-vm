@@ -44,31 +44,31 @@ void gsm_second_pass(std_file *restrict ga_file, std_file *restrict gbc_file) {
   //    0-alpha prefix)
 
   // Add GBC file header (See GBC file spec for more details on these)
-  file_write(&g_gsm_guard, sizeof g_gsm_guard, 1, gbc_file);
-  file_write(&g_gsm_magic, sizeof g_gsm_magic, 1, gbc_file);
-  file_write(&g_gsm_major, sizeof g_gsm_major, 1, gbc_file);
-  file_write(&g_gsm_minor, sizeof g_gsm_minor, 1, gbc_file);
-  file_write(&g_gsm_patch, sizeof g_gsm_patch, 1, gbc_file);
-  file_write(&g_gsm_unused, sizeof g_gsm_unused, 1, gbc_file);
+  std_file_write(&g_gsm_guard, sizeof g_gsm_guard, 1, gbc_file);
+  std_file_write(&g_gsm_magic, sizeof g_gsm_magic, 1, gbc_file);
+  std_file_write(&g_gsm_major, sizeof g_gsm_major, 1, gbc_file);
+  std_file_write(&g_gsm_minor, sizeof g_gsm_minor, 1, gbc_file);
+  std_file_write(&g_gsm_patch, sizeof g_gsm_patch, 1, gbc_file);
+  std_file_write(&g_gsm_unused, sizeof g_gsm_unused, 1, gbc_file);
 
-  file_seek(ga_file, 0, FSEEK_SET);
+  std_file_seek(ga_file, 0, FSEEK_SET);
 
-  std_arena *line_memory = arena_create(sizeof(gbc_command), 0);
+  std_arena *line_memory = std_arena_create(sizeof(gbc_command), 0);
 
   // TODO: Read the data section of the GBC file
 
   // Begin reading code lines from the GA file
-  while (file_err(ga_file) == 0) {
-    std_string line = file_read_line(line_memory, ga_file);
+  while (std_file_err(ga_file) == 0) {
+    std_string line = std_file_read_line(line_memory, ga_file);
 
     std_str_token *token;
     char space = ' ';
-    str_tokenize(token, line, space);
+    std_str_tokenize(token, line, space);
 
     // TODO: Read tokens from a GA line and write its bytecode to the gbc file.
     gbc_command bytecode = {0};
 
-    std_string opcode_str = str_token_get(token);
+    std_string opcode_str = std_str_token_get(token);
     bytecode |= get_opcode(opcode_str) << OPCODE_SHFT;
 
     switch (get_code(opcode_str)) {
@@ -81,13 +81,13 @@ void gsm_second_pass(std_file *restrict ga_file, std_file *restrict gbc_file) {
       bytecode |= func << CODE1_FNC_SHFT;
 
       // Set register rx if possible
-      if (str_token_next(token)) {
-        uint32_t rx = get_register(str_token_get(token));
+      if (std_str_token_next(token)) {
+        uint32_t rx = get_register(std_str_token_get(token));
         bytecode |= rx << CODE1_RX1_SHFT;
       }
 
       // Set immediate imm
-      if (str_token_next(token)) {
+      if (std_str_token_next(token)) {
       }
 
       break;
@@ -105,15 +105,15 @@ void gsm_second_pass(std_file *restrict ga_file, std_file *restrict gbc_file) {
       break;
     }
 
-    arena_clean(line_memory);
+    std_arena_clean(line_memory);
   }
 
-  if (file_err(ga_file) != FERR_EOF) {
-    errno_msg("Failed to properly read GA file");
+  if (std_file_err(ga_file) != FERR_EOF) {
+    std_errno_msg("Failed to properly read GA file");
     ASSEMBLE_PANIC();
   }
 
-  arena_destroy(line_memory);
+  std_arena_destroy(line_memory);
 }
 
 // Gets the code type number of the GA command based off its opcode.
@@ -139,12 +139,12 @@ static uint32_t get_code(std_string opcode) {
   static const uint32_t code_len = sizeof(codes) / sizeof(codes[0]);
 
   for (uint32_t i = 0; i < code_len; i++) {
-    if (str_compare(opcode, codes[i].name) == 0) {
+    if (std_str_compare(opcode, codes[i].name) == 0) {
       return codes[i].code;
     }
   }
 
-  std_panic("Invalid opcode read: %s", str_get(opcode));
+  std_panic("Invalid opcode read: %s", std_str_get(opcode));
 }
 
 // Gets the opcode integer from its string representation. This opcode needs
@@ -183,12 +183,12 @@ static uint32_t get_opcode(std_string opcode) {
   static const uint32_t opcode_table_size =
       sizeof(opcode_mappings) / sizeof(opcode_mappings[0]);
   for (uint32_t i = 0; i < opcode_table_size; i++) {
-    if (str_compare(opcode, opcode_mappings[i].name) == 0) {
+    if (std_str_compare(opcode, opcode_mappings[i].name) == 0) {
       return opcode_mappings[i].code;
     }
   }
 
-  std_panic("Invalid opcode read: %s", str_get(opcode));
+  std_panic("Invalid opcode read: %s", std_str_get(opcode));
 }
 
 // Gets the register number from its string representation. This register
@@ -210,12 +210,12 @@ static uint32_t get_register(std_string reg) {
   static const uint32_t reg_table_size =
       sizeof(reg_mappings) / sizeof(reg_mappings[0]);
   for (uint32_t i = 0; i < reg_table_size; i++) {
-    if (str_compare(reg, reg_mappings[i].name) == 0) {
+    if (std_str_compare(reg, reg_mappings[i].name) == 0) {
       return reg_mappings[i].code;
     }
   }
 
-  std_panic("Invalid register read: %s", str_get(reg));
+  std_panic("Invalid register read: %s", std_str_get(reg));
 }
 
 // Gets the func from a code 1 opcode string. This func needs to be shifted
@@ -231,12 +231,12 @@ static uint32_t get_code1_func(std_string opcode) {
   static const uint32_t func_table_size =
       sizeof(func_mappings) / sizeof(func_mappings[0]);
   for (uint32_t i = 0; i < func_table_size; i++) {
-    if (str_compare(opcode, func_mappings[i].name) == 0) {
+    if (std_str_compare(opcode, func_mappings[i].name) == 0) {
       return func_mappings[i].code;
     }
   }
 
-  std_panic("Invalid opcode read: %s", str_get(opcode));
+  std_panic("Invalid opcode read: %s", std_str_get(opcode));
 }
 
 // Gets the func from a code 3 opcode string. This func needs to be shifted
@@ -257,10 +257,10 @@ static uint32_t get_code3_func(std_string opcode) {
 
   uint32_t func_table_size = sizeof(func_mappings) / sizeof(func_mappings[0]);
   for (uint32_t i = 0; i < func_table_size; i++) {
-    if (str_compare(opcode, func_mappings[i].name) == 0) {
+    if (std_str_compare(opcode, func_mappings[i].name) == 0) {
       return func_mappings[i].code;
     }
   }
 
-  std_panic("Invalid opcode read: %s", str_get(opcode));
+  std_panic("Invalid opcode read: %s", std_str_get(opcode));
 }

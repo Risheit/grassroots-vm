@@ -8,12 +8,9 @@ bytecode (GBC) language specification.
 # Motivations
 
 GBC is a language built to run on the 64-bit Grassroots virtual machine (GVM).
-It should take advantage of GVM abilities to encode higher-level concepts 
-and utilities into each binary. At the same time, GBC aims to be relatively 
-simple in its implementation. 
-GVM is a register-based bytecode, with 32-bit instructions. This allows it to 
-be clearer to parse and allows for shorter instruction sizes and quicker run 
-times. 
+It should take advantage of GVM abilities to encode higher-level concepts
+and utilities into each binary. At the same time, GBC aims to be relatively
+simple in its implementation.
 
 # File Specifications
 
@@ -41,6 +38,12 @@ A GBC file has the following file format:
 +--------------+
 ```
 
+All GBC values must be aligned to 32-bits, since that is the smallest unit the
+GVM is expected to read at a time.
+
+Following from the previous specification, a GBC file size should be a multiple of
+32 bits.
+
 ### GBC Header (`gbc_header`)
 
 The GBC header is defined as the following:
@@ -56,6 +59,8 @@ typedef struct {
     uint64_t data_off;  // Static data section offset in bytes
 } gbc_header;
 ```
+
+All offsets should be aligned to 32-bit boundaries.
 
 #### GBC Identifier (`ident`)
 
@@ -88,6 +93,7 @@ New major versions can break compatibility.
 #### Link Table Offset (`lt_off`)
 
 `lt_off` is defined as the offset to the link table in bytes.
+This is set to 0 if no link table exists.
 
 #### Code Section Offset (`code_off`)
 
@@ -96,10 +102,12 @@ New major versions can break compatibility.
 #### Type Section Offset (`type_off`)
 
 `type_off` is defined as the offset to the data type map section in bytes.
+This is set to 0 if no data section exists.
 
 #### Data Section Offset (`data_off`)
 
 `data_off` is defined as the offset to the data section in bytes.
+This is set to 0 if no data section exists.
 
 ### Link Table
 
@@ -194,6 +202,7 @@ typedef struct {
 typedef struct {
     uint8_t size;       // Size in bytes of data type
     uint8_t type;       // Defined using type definitions
+    uint16_t padding;   // Should be set to 0; reserved space for future versions.
     uint64_t addr;      // Data section address
 } dt_row;
 ```
@@ -205,22 +214,31 @@ pointer addresses.
 
 ```c
 typedef struct {
-    uint8_t data[];
+    uint32_t data[];
 } data;
 ```
 
-## Memory Map 
+Though data is byte-addressable, it must be stored internally as 32-bit values, to
+avoid the GVM (which reads in 32-bit words) reading past the end of the file. Any excess
+data space should be initialized to 0.
 
-The following table describes at which virtual addresses different GBC sections are loaded into memory.
+## Memory Map
 
-Link and data type tables should be maintained by the GVM, but should not be accessible by the to the GBC program.
+The following table describes at which virtual addresses different GBC
+sections are loaded into memory.
 
-| Section Name | Virtual Address Start | Virtual Address End |
-|---|---|---|
-| Runtime Memory | 0x00010000 | 0x9FFFFFFF |
-| Dynamic Functions | 0xA0000000 | 0xAFFFFFFF |
-| Code Section | 0xB0000000 | 0xBFFFFFFF |
-| Data Section | 0xC0000000 | 0xFFEFFFFF |
+The table defines the upper 32-bits of each virtual address.
+All sections start with bottom 4 bytes 0x00, and end with bottom 4 bytes 0xFF.
+
+| Section Name      | Virtual Address Start | Virtual Address End |
+| ----------------- | --------------------- | ------------------- |
+| Runtime Memory    | 0x00010000            | 0x9FFFFFFF          |
+| Dynamic Functions | 0xA0000000            | 0xAFFFFFFF          |
+| Code Section      | 0xB0000000            | 0xBFFFFFFF          |
+| Data Section      | 0xC0000000            | 0xFFEFFFFF          |
+
+Link and data type tables should be maintained by the GVM, but should not be
+accessible by the to the GBC program.
 
 Other memory addresses are reserved for GVM uses, such as marking system interrupt boundaries.
 
@@ -247,12 +265,14 @@ operations or from `LOAD` operations from memory. Registers contain fixed-width
 example, loading a signed, 32-bit negative number into a register will move the sign
 bit to the 64th bit instead, extending it to a 64-bit negative number.
 
+Reserved registers have specified initialization values they should be set to.
+
 The following registers are reserved:
 
 - `'zero = '0`: The void register is always zero, when copying from or to.
 - `'pc = '255`: The program counter register represents the current address in code.
-- `'if = '254`: The cond register stores the result of comparison operations.
-- `'ret = '253`: The return value register for system calls.
+- `'if = '254`: The cond register stores the result of comparison operations. This starts at 0.
+- `'ec = '253`: The exit code register, storing the program return value. Only the lowest 16 bits are read. This starts at 0.
 
 ### Instruction Format
 
@@ -301,31 +321,33 @@ They are defined as follows:
 ### Instruction Set
 
 The following table summarizes the current set of instructions.
-| Opcode | Type | Name | Description |
-|---|---|---|---|
-| 0x01 | 2 | LOAD | Load a static value into a register. |
-| 0x02 | 1 | LOADI | Load a value from an immediate address into a register. |
-| 0x03 | 1 | JUMP | Jump to an offset from the current program counter. |
-| 0x04 | 1 | JMPR | Jump to an address stored in a register. |
-| 0x05 | 3 | ADD | Add the values of two registers. |
-| 0x06 | 3 | SUB | Subtract the values of two registers. |
-| 0x07 | 3 | MUL | Multiply the values of two registers. |
-| 0x08 | 3 | DIV | Divide the values of two registers. |
-| 0x09 | 3 | MOD | Modulus the values of two registers. |
-| 0x0a | 2 | NOT | Negate the value in a register. |
-| 0x0b | 3 | AND | Logically AND the values of two registers. |
-| 0x0c | 3 | OR | Logically OR the values of two registers. |
-| 0x0d | 3 | XOR | Logically XOR the values of two registers. |
-| 0x0e | 2 | SHIFT | Bitshift the value in register. |
-| 0x0f | 3 | LT | Check if the value of a register is smaller than another. |
-| 0x10 | 3 | LE | Check if the value of a register is equal or smaller than another. |
-| 0x11 | 3 | EQ | Check if the value of a register is equal to another. |
-| 0x12 | 1 | PUSH | Puhsh the value in a register onto the stack. |
-| 0x13 | 1 | POP | Pop the value in a register off the stack. |
-| 0x14 | 1 | CALL | Call a system call or dynamic function. |
-| 0x15 | 1 | MOVE | Move a value into a register. |
-| 0x16 | 1 | MOVEI | Move a value into a register. |
-| 0x17 | 3 | TYPE | Cast the value of a register to another type. |
+
+| Opcode | Type | Name  | Description                                                        |
+| ------ | ---- | ----- | ------------------------------------------------------------------ |
+| 0x01   | 2    | LOAD  | Load a static value into a register.                               |
+| 0x02   | 1    | LOADI | Load a value from an immediate address into a register.            |
+| 0x03   | 1    | JUMP  | Jump to an offset from the current program counter.                |
+| 0x04   | 1    | JMPR  | Jump to an address stored in a register.                           |
+| 0x05   | 3    | ADD   | Add the values of two registers.                                   |
+| 0x06   | 3    | SUB   | Subtract the values of two registers.                              |
+| 0x07   | 3    | MUL   | Multiply the values of two registers.                              |
+| 0x08   | 3    | DIV   | Divide the values of two registers.                                |
+| 0x09   | 3    | MOD   | Modulus the values of two registers.                               |
+| 0x0a   | 2    | NOT   | Negate the value in a register.                                    |
+| 0x0b   | 3    | AND   | Logically AND the values of two registers.                         |
+| 0x0c   | 3    | OR    | Logically OR the values of two registers.                          |
+| 0x0d   | 3    | XOR   | Logically XOR the values of two registers.                         |
+| 0x0e   | 2    | SHIFT | Bitshift the value in register.                                    |
+| 0x0f   | 3    | LT    | Check if the value of a register is smaller than another.          |
+| 0x10   | 3    | LE    | Check if the value of a register is equal or smaller than another. |
+| 0x11   | 3    | EQ    | Check if the value of a register is equal to another.              |
+| 0x12   | 1    | PUSH  | Puhsh the value in a register onto the stack.                      |
+| 0x13   | 1    | POP   | Pop the value in a register off the stack.                         |
+| 0x14   | 1    | CALL  | Call a system call or dynamic function.                            |
+| 0x15   | 2    | MOVE  | Move a value into a register.                                      |
+| 0x16   | 1    | MOVEI | Move a value into a register.                                      |
+| 0x17   | 3    | TYPE  | Cast the value of a register to another type.                      |
+| 0x18   | 1    | EXIT  | Exit the program.                                                  |
 
 #### `LOAD`, `LOADI` Instructions
 
@@ -418,7 +440,7 @@ A dynamic function `('D, 'E) = func('A, 'B, 'C)` is must be set up in this order
 PUSH 'A
 PUSH 'B
 PUSH 'C
-CALL
+CALL 'F     ; Assume function address loaded into 'F
 POP 'D
 POP 'E
 ```
@@ -430,7 +452,7 @@ MOVE 'A 'B          == 'A := val('B)
 MOVEI 0 'A IMM:16   == 'A := uint(IMM:16)         ; Inserted into the bottom 16-bits
 MOVEI 1 'A IMM:16   == 'A := uint(IMM:16) << 4    ; Inserted into the lower-middle 16-bits
 MOVEI 2 'A IMM:16   == 'A := uint(IMM:16) << 8    ; Inserted into the upper-middle 16-bits
-MOVEI 3 'A IMM:16   == 'A := uint(IMM:16) << 12   ; Inserted into the top 16-bits
+MOVEI 3 'A IMM:16   == 'A := uint(IMM:16) << 12   ; Inserted into the upper 16-bits
 ```
 
 ```
@@ -451,5 +473,14 @@ TYPE 2 'A 'B        == 'A := float(val('B))     ; Read as 64-bit float
 ```
 
 Copies the value of one register to another, reinterpreting the
-underlying value as another type. It's important to note that the underlying 
+underlying value as another type. It's important to note that the underlying
 value is not changed, just the register type.
+
+#### `EXIT` Instruction
+
+```
+EXIT
+```
+
+Immediately exits the program and returns the value stored in 'ec as the program 
+exit code.

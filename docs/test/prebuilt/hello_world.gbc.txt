@@ -1,0 +1,13 @@
+0xAA: "Hello, World!\n"
+
+MOVEI   0 '1 14     ; Move size of string into register
+PUSH    '1          ; Push string size onto stack
+
+LOADI   '2 0xAA     ; Load static string from address 0x40
+PUSH    '2          ; Push string start onto stack
+
+MOVEI   0 '3 0x01   ; Move print syscall into register
+MOVEI   3 '3 0x0    ; Syscalls have upper 16 bytes set to 0x0F.
+CALL    '3          ; Print message
+
+EXIT                ; Exit explicitly

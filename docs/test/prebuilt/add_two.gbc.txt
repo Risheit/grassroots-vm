@@ -1,0 +1,13 @@
+MOVEI   0 '1 0x02   ; Move getint syscall into register
+MOVEI   3 '1 0x0F   ; Syscalls have upper 16 bytes set to 0x0F.
+
+CALL    '1          ; Get first integer
+POP     '2          ; Load received integer into register.
+
+CALL    '1          ; Get second integer
+POP     '3          ; Load second received integer into register.
+
+ADD     '4 '2 '3    ; Add the two numbers
+MOVE    'ec '4      ; Store the value into the exit code register.
+
+EXIT                ; Returns the result as the program exit code.

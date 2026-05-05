@@ -144,7 +144,7 @@ static uint32_t get_code(std_string opcode) {
     }
   }
 
-  std_panic("Invalid opcode read: %s", std_str_get(opcode));
+  std_panic("Invalid opcode read: %s", std_buf(opcode));
 }
 
 // Gets the opcode integer from its string representation. This opcode needs
@@ -188,7 +188,7 @@ static uint32_t get_opcode(std_string opcode) {
     }
   }
 
-  std_panic("Invalid opcode read: %s", std_str_get(opcode));
+  std_panic("Invalid opcode read: %s", std_buf(opcode));
 }
 
 // Gets the register number from its string representation. This register
@@ -215,7 +215,7 @@ static uint32_t get_register(std_string reg) {
     }
   }
 
-  std_panic("Invalid register read: %s", std_str_get(reg));
+  std_panic("Invalid register read: %s", std_buf(reg));
 }
 
 // Gets the func from a code 1 opcode string. This func needs to be shifted
@@ -236,7 +236,7 @@ static uint32_t get_code1_func(std_string opcode) {
     }
   }
 
-  std_panic("Invalid opcode read: %s", std_str_get(opcode));
+  std_panic("Invalid opcode read: %s", std_buf(opcode));
 }
 
 // Gets the func from a code 3 opcode string. This func needs to be shifted
@@ -262,5 +262,5 @@ static uint32_t get_code3_func(std_string opcode) {
     }
   }
 
-  std_panic("Invalid opcode read: %s", std_str_get(opcode));
+  std_panic("Invalid opcode read: %s", std_buf(opcode));
 }

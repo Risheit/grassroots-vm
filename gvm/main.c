@@ -73,9 +73,14 @@ int main(int argc, const char **argv) {
 
   size_t size = std_file_size(gbc_file);
   byte *ptr = std_arena_alloc(working_memory, size);
-  size_t read = std_file_read(ptr, gbc_file, size);
+  size_t read = std_file_readb(ptr, gbc_file, size);
   if (read < size) {
     std_eprintf("read < size: %lu < %lu\n", read, size);
+    if (std_file_err(gbc_file) == FERR_EOF) {
+      std_eprintf("End of file reached.\n");
+    } else {
+      std_errno_msg("Error");
+    }
   }
   if (std_file_err(gbc_file)) {
     return 3;

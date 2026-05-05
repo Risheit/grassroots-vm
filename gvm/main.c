@@ -72,10 +72,9 @@ int main(int argc, const char **argv) {
   }
 
   size_t size = std_file_size(gbc_file);
-  byte *ptr = std_arena_alloc(working_memory, size);
-  size_t read = std_file_readb(ptr, gbc_file, size);
-  if (read < size) {
-    std_eprintf("read < size: %lu < %lu\n", read, size);
+  std_szptr read = std_file_read(gbc_file, working_memory, size, sizeof(byte));
+  if (read.size < size) {
+    std_eprintf("read < size: %lu < %lu\n", read.size, size);
     if (std_file_err(gbc_file) == FERR_EOF) {
       std_eprintf("End of file reached.\n");
     } else {
@@ -86,7 +85,8 @@ int main(int argc, const char **argv) {
     return 3;
   }
 
-  DumpHex(ptr, read);
+  DumpHex(read.ptr, read.size);
+  std_arena_destroy(working_memory);
 
   return 0;
 }

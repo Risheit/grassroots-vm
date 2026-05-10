@@ -12,8 +12,9 @@ foreach(test ${TESTS})
 
   target_include_directories(${TARGET_NAME} PRIVATE ..)
   target_compile_options(${TARGET_NAME} PRIVATE -Wall -Wextra)
-  target_compile_definitions(${TARGET_NAME}
-                             PRIVATE PREBUILT_DIR="${PREBUILT_OUT_DIR}")
+  target_compile_definitions(
+    ${TARGET_NAME} PRIVATE TEST_BUILD PREBUILT_DIR="${PREBUILT_OUT_DIR}"
+                           TEST_STATIC=)
   target_link_libraries(${TARGET_NAME} PRIVATE CCORE::std)
 endforeach()
 

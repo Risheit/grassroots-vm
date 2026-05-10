@@ -111,7 +111,7 @@ enum DataType : u8 {
 struct DataTypeRow {
     u8 size         [[name("Element Size (bytes)")]];
     DataType type;
-    padding[4];
+    padding[2];
     u64 addr        [[name("Data Section Address")]];
 };
 

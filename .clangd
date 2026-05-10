@@ -1,6 +1,8 @@
 CompileFlags:
   Add: 
   - -xc
+  - -DTEST_BUILD
+  - -DTEST_STATIC=
 
 Diagnostics:
   ClangTidy:

@@ -1,4 +1,4 @@
-Version 1.0.0
+Version 1.0.1
 
 # Intro
 
@@ -50,7 +50,7 @@ The GBC header is defined as the following:
 
 ```c
 typedef struct {
-    uint8_t ident[8];   // Identifier
+    uint64_t ident;     // Identifier
     uint16_t ver[4];    // Version identifier
 
     uint64_t lt_off;    // Link table offset in bytes

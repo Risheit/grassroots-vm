@@ -234,8 +234,7 @@ All sections start with bottom 4 bytes 0x00, and end with bottom 4 bytes 0xFF.
 | ----------------- | --------------------- | ------------------- |
 | Runtime Memory    | 0x00010000            | 0x9FFFFFFF          |
 | Dynamic Functions | 0xA0000000            | 0xAFFFFFFF          |
-| Code Section      | 0xB0000000            | 0xBFFFFFFF          |
-| Data Section      | 0xC0000000            | 0xFFEFFFFF          |
+| GBC File          | 0xC0000000            | 0xFFEFFFFF          |
 
 Link and data type tables should be maintained by the GVM, but should not be
 accessible by the to the GBC program.

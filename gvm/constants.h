@@ -2,6 +2,10 @@
 
 #include <stdint.h>
 
+typedef uint64_t Register;
+typedef uint64_t MemOffset;
+typedef uint32_t Instr;
+
 // Read identifier as int64_t little-endian
 #define GBC_IDENT 0x0A1A0D0A434247F7LL
 
@@ -15,14 +19,11 @@
 #define EXIT_FILE_ERR 2
 
 #define GBC_MAX_PAGE_SZ 4096
-#define GBC_MAX_PAGES 2
+#define GBC_MAX_PAGE_INSTRS (GBC_MAX_PAGE_SZ / sizeof(Instr))
+#define GBC_MAX_CONCURRENT_PAGES 2
 #define GBC_MAX_REGS 256
 
-#define GBC_REG_ZERO 0 
-#define GBC_REG_PC 255 
-#define GBC_REG_IF 254 
+#define GBC_REG_ZERO 0
+#define GBC_REG_PC 255
+#define GBC_REG_IF 254
 #define GBC_REG_EC 253
-
-typedef uint64_t Register;
-typedef uint64_t MemOffset;
-typedef uint32_t Instr;

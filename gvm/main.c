@@ -35,17 +35,16 @@ int main(int argc, const char **argv) {
     return EXIT_BAD_ARGS;
   }
 
-  int exitCode = 0;
   std_with_arena(persistent, std_dyn_arena()) {
     std_with_file(gbcFile, std_file_open(persistent, fileName, FOPEN_READ, 0)) {
       if (std_file_err(gbcFile)) {
         std_errno_msg("Couldn't open GBC file");
-        exitCode = EXIT_FILE_ERR;
+        std_exit(EXIT_FILE_ERR);
       }
 
-      exitCode = runVirtualMachine(gbcFile);
+      runVirtualMachine(gbcFile);
     }
   }
 
-  return exitCode;
+  return 0;
 }

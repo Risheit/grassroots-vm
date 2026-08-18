@@ -5,6 +5,7 @@
 #include "std/memory.h" // IWYU pragma: keep
 #include <stdint.h>
 
+typedef struct Machine Machine;
 
 typedef struct {
   MemOffset linkTable;   // lt_off
@@ -15,7 +16,7 @@ typedef struct {
 
 // Runs the virtual machine over a given gbcFile. This returns a non-zero
 // value on failure.
-int runVirtualMachine(std_file *gbcFile);
+void runVirtualMachine(std_file *gbcFile);
 
 #ifdef TEST_BUILD
 
@@ -33,5 +34,15 @@ void consumeIdentifier(std_arena *restrict arena, std_file *restrict gbcFile);
 // Returns an array of length four allocated into [arena].
 void consumeVersionNumber(std_arena *restrict arena,
                           std_file *restrict gbcFile);
+
+// Reads up to GBC_MAX_PAGE_SZ instructions or until end of
+// code section into memory.
+void readCodePage(Machine *machine, MemOffset offset);
+
+// Creates a new virtual machine instance.
+Machine *initVirtualMachine(std_file *gbcFile);
+
+// Destroys an existing virtual machine instance.
+void destroyVirtualMachine(Machine *machine);
 
 #endif

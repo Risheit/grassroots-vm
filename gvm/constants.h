@@ -6,6 +6,10 @@ typedef uint64_t Register;
 typedef uint64_t MemOffset;
 typedef uint32_t Instr;
 
+// Needs to be large enough to store all page index values (2^51 with 8192 bit
+// pages)
+typedef int64_t PageIndex;
+
 // Read identifier as int64_t little-endian
 #define GBC_IDENT 0x0A1A0D0A434247F7LL
 
@@ -18,7 +22,7 @@ typedef uint32_t Instr;
 #define EXIT_BAD_ARGS 1
 #define EXIT_FILE_ERR 2
 
-#define GBC_MAX_PAGE_SZ 4096
+#define GBC_MAX_PAGE_SZ 8192
 #define GBC_MAX_PAGE_INSTRS (GBC_MAX_PAGE_SZ / sizeof(Instr))
 #define GBC_MAX_CONCURRENT_PAGES 2
 #define GBC_MAX_REGS 256

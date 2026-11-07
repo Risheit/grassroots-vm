@@ -27,8 +27,24 @@ During setup, the following steps are necessary:
 
 - Initialize registers.
 - (TBI) Find and load dynamic functions from the link table.
+- Load the data type table into virtual memory.
 - Load the code section and map it to virtual memory.
 - Load the data section and map it to virtual memory.
+
+## Parsing memory addresses
+
+(TODO) Due to paged loading and the fact that the file is read in through standard read commands, and not file mapping,
+do we want to put the whole GBC file into memory, and treat pointers normally in the file normally? Or do we rather
+set code and memory mappings separately? We can convert between the pointers in the file to literal memory pointers
+per-access.
+
+I'm leaning towards the second, since:
+
+- We have freer use of how we handle memory.
+- It's more secure, since pointers can't point to private memory, like the type table.
+
+In this case, we can convert between written data and code pointers by subtracting the necessary offsets as listed
+in the type header, and adding memory offsets according to GBC spec requirements.
 
 ## Code parsing
 

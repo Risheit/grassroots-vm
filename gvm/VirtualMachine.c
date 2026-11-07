@@ -5,6 +5,34 @@
 #include "std/memory.h"
 #include <stdint.h>
 
+// Holds required details to run the VM
+struct Machine {
+  // Underlying data
+  std_arena *buffer; // Machine's storage buffer
+  std_file *file;    // Open GBC file
+
+  // Code handling
+  PageIndex
+      codePageIndex[GBC_MAX_CONCURRENT_PAGES]; // Absolute page index
+                                               // inside GBC file (-1 for N/A)
+  Instr codePages[GBC_MAX_CONCURRENT_PAGES][GBC_MAX_PAGE_INSTRS];
+  uint16_t freePage; // Next page in 0-index that is available to be written to.
+                     // If this is >= GBC_MAX_PAGE_SZ, then it wraps to 0.
+  bool shouldExit;   // Has program ended?
+
+  // Memory
+  Register registers[GBC_MAX_REGS];
+  // TODO: Static data
+
+  // GBC data
+  GBCOffsets sections;
+
+  // Specialized Registers
+  Register *rPc; // Program counter
+  Register *rIf; // Comp results
+  Register *rEc; // Exit code
+};
+
 [[nodiscard]]
 static inline void *readFileChecked(std_file *restrict file,
                                     std_arena *restrict arena, size_t n,
@@ -73,31 +101,6 @@ static GBCOffsets parseHeader(std_file *gbcFile) {
   return offsets;
 }
 
-// Holds required details to run the VM
-struct Machine {
-  // Underlying data
-  std_arena *buffer; // Machine's storage buffer
-  std_file *file;    // Open GBC file
-
-  // Code handling
-  Instr codePages[GBC_MAX_CONCURRENT_PAGES][GBC_MAX_PAGE_INSTRS];
-  uint16_t freePage; // Next page in 0-index that is available to be written to.
-                     // If this is >= GBC_MAX_PAGE_SZ, then it wraps to 0.
-  bool shouldExit;   // Has program ended?
-
-  // Memory
-  Register registers[GBC_MAX_REGS];
-  // TODO: Static data
-
-  // GBC data
-  GBCOffsets sections;
-
-  // Specialized Registers
-  Register *rPc; // Program counter
-  Register *rIf; // Comp results
-  Register *rEc; // Exit code
-};
-
 // Clears any data after an end marker read (0x0000 0000) to prevent private
 // data from being read.
 static void trimExcessRead(Instr codePage[GBC_MAX_PAGE_INSTRS]) {
@@ -121,9 +124,9 @@ TEST_STATIC void readCodePage(Machine *machine, MemOffset offset) {
   //  read.
   //  - Increase freePage by 1 or reset it to 0 (if > GBC_MAX_CONCURRENT_PAGES).
 
-  uint16_t page = (uint16_t)(offset / GBC_MAX_PAGE_SZ);
-  MemOffset pageOffsetInFile =
-      (MemOffset)(GBC_MAX_PAGE_SZ * page) + machine->sections.codeSection;
+  PageIndex absPageIndex = (PageIndex)(offset / GBC_MAX_PAGE_SZ);
+  MemOffset pageOffsetInFile = (MemOffset)(GBC_MAX_PAGE_SZ * absPageIndex) +
+                               machine->sections.codeSection;
 
   // Read page from file
   std_file_seek(machine->file, pageOffsetInFile, FSEEK_SET);
@@ -137,6 +140,8 @@ TEST_STATIC void readCodePage(Machine *machine, MemOffset offset) {
   }
 
   trimExcessRead(machine->codePages[machine->freePage]);
+
+  machine->codePageIndex[machine->freePage] = absPageIndex;
 
   // Increment free page or reset to 0
   machine->freePage++;
@@ -157,6 +162,9 @@ TEST_STATIC Machine *initVirtualMachine(std_file *gbcFile) {
                          .size = GBC_MAX_CONCURRENT_PAGES * GBC_MAX_PAGE_SZ},
              0);
   machine->freePage = 0;
+  std_memset((std_szptr){.ptr = machine->codePageIndex,
+                         .size = GBC_MAX_CONCURRENT_PAGES * sizeof(PageIndex)},
+             -1);
 
   machine->sections = parseHeader(gbcFile);
   machine->rPc = &machine->registers[GBC_REG_PC];
@@ -175,6 +183,43 @@ TEST_STATIC void destroyVirtualMachine(Machine *machine) {
   std_arena_destroy(machine->buffer);
 }
 
+static Instr *getLoadedCodePage(Machine *machine, PageIndex absPageIndex) {
+  for (PageIndex i = 0; i < GBC_MAX_CONCURRENT_PAGES; i++) {
+    if (machine->codePageIndex[i] == absPageIndex) {
+      return machine->codePages[i];
+    }
+  }
+
+  return nullptr;
+}
+
+static Instr readNextInstruction(Machine *machine) {
+  // Convert from memory address to index in codePage array.
+  //  RelOffset = rPc - sections.codeSection (rpc >= codeSection)
+  //  PageIndex = floor(RelOffset / PG_SIZE)
+  //    Which absolute code page index? We then linear search through
+  //    current code pages loaded in to find the correct one.
+  //  MemIndex = RelOffset % PG_SIZE
+
+  const MemOffset relOffset = *machine->rPc - machine->sections.codeSection;
+  const PageIndex absPageIndex = (PageIndex)(relOffset / GBC_MAX_PAGE_SZ);
+
+  Instr *page = getLoadedCodePage(machine, absPageIndex);
+  if (!page) { // Page not loaded in memory
+    readCodePage(machine, *machine->rPc);
+    page = getLoadedCodePage(machine, absPageIndex);
+
+    std_assert(!page, "pc out of section bounds at %llu", *machine->rPc);
+  }
+
+  machine->rPc += sizeof(Instr);
+
+  const MemOffset inPageOffset = relOffset % GBC_MAX_PAGE_SZ;
+  return page[inPageOffset];
+}
+
+static void runInstruction(Machine *machine, Instr instr) {}
+
 void runVirtualMachine(std_file *gbcFile) {
   Machine *machine = initVirtualMachine(gbcFile);
 
@@ -186,6 +231,8 @@ void runVirtualMachine(std_file *gbcFile) {
   // 3. Increment counter.
 
   while (!machine->shouldExit) {
+    Instr instr = readNextInstruction(machine);
+    runInstruction(machine, instr);
   }
 
   destroyVirtualMachine(machine);

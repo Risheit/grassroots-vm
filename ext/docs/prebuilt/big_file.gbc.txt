@@ -1,0 +1,4 @@
+ADD '1 '0 '0  ; Adds 0 + 0 into '1
+... Repeated many times
+
+EXIT          ; Returns 0 and exits

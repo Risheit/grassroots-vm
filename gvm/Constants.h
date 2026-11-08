@@ -15,9 +15,9 @@ typedef int64_t PageIndex;
 
 #define GBC_VER_BYTES 4
 
-#define GBC_VER_MAJOR 1
-#define GBC_VER_MINOR 0
-#define GBC_VER_PATCH 1
+#define GBC_VER_MAJOR 0
+#define GBC_VER_MINOR 1
+#define GBC_VER_PATCH 0
 
 #define EXIT_BAD_ARGS 1
 #define EXIT_FILE_ERR 2

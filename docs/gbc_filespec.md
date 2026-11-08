@@ -373,6 +373,8 @@ JMPR 1 'A                   == 'pc := uint('A) [if 'if > 0] ; Conditional jump
 `JUMP` jumps forward or back by the value of an immediate, treated as an
 unsigned integer. `JMPR` jumps directly to the memory address stored in register 'A.
 
+The `func` field separates different jump variations.
+
 #### `ADD`, `SUB`, `MUL`, `DIV`, `MOD` Instructions
 
 ```
@@ -416,7 +418,7 @@ is undefined behaviour.
 
 ```
 PUSH 'A         == STACK := val('A), STACK increment
-PUSH 'A         == 'A := at(STACK), STACK decrement
+POP 'A          == 'A := at(STACK), STACK decrement
 ```
 
 Performs stack manipulations. Type information is maintained during
@@ -454,10 +456,6 @@ MOVEI 2 'A IMM:16   == 'A := uint(IMM:16) << 8    ; Inserted into the upper-midd
 MOVEI 3 'A IMM:16   == 'A := uint(IMM:16) << 12   ; Inserted into the upper 16-bits
 ```
 
-```
-    | imm:16 | imm:16 | imm:16 | imm:16 |
-```
-
 Copies an immediate or another register into a register.
 `MOVE` instructions maintain register typing.
 `MOVEI` instructions load bits into a register as unsigned ints. The type of the
@@ -475,11 +473,13 @@ Copies the value of one register to another, reinterpreting the
 underlying value as another type. It's important to note that the underlying
 value is not changed, just the register type.
 
+The `func` field distinguishes the type to convert to.
+
 #### `EXIT` Instruction
 
 ```
 EXIT
 ```
 
-Immediately exits the program and returns the value stored in 'ec as the program 
+Immediately exits the program and returns the value stored in 'ec as the program
 exit code.

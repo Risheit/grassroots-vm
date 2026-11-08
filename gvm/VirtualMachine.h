@@ -18,6 +18,13 @@ typedef struct {
 // value on failure.
 void runVirtualMachine(std_file *gbcFile);
 
+
+// Returns a pointer to the program counter register for read/write access.
+Register *getProgramCounter(Machine *machine);
+
+// Returns the code section offset from the machine's GBC offsets.
+MemOffset getMachineCodeSection(Machine *machine);
+
 #ifdef TEST_BUILD
 
 // Reads and consumes a GBC file header from the start of [gbcFile]. Returns
@@ -44,5 +51,11 @@ Machine *initVirtualMachine(std_file *gbcFile);
 
 // Destroys an existing virtual machine instance.
 void destroyVirtualMachine(Machine *machine);
+
+// Reads the next instruction at the current program counter and advances it.
+Instr consumeNextInstruction(Machine *machine);
+
+// Runs an instruction on the given virtual machine instance.
+void runInstruction(Machine *machine, Instr instr);
 
 #endif

@@ -193,13 +193,13 @@ static Instr *getLoadedCodePage(Machine *machine, PageIndex absPageIndex) {
   return nullptr;
 }
 
-static Instr readNextInstruction(Machine *machine) {
+TEST_STATIC Instr consumeNextInstruction(Machine *machine) {
   // Convert from memory address to index in codePage array.
   //  RelOffset = rPc - sections.codeSection (rpc >= codeSection)
   //  PageIndex = floor(RelOffset / PG_SIZE)
   //    Which absolute code page index? We then linear search through
   //    current code pages loaded in to find the correct one.
-  //  MemIndex = RelOffset % PG_SIZE
+  //  MemIndex = (RelOffset % PG_SIZE) / sizeof(Instr)
 
   const MemOffset relOffset = *machine->rPc - machine->sections.codeSection;
   const PageIndex absPageIndex = (PageIndex)(relOffset / GBC_MAX_PAGE_SZ);
@@ -209,16 +209,21 @@ static Instr readNextInstruction(Machine *machine) {
     readCodePage(machine, *machine->rPc);
     page = getLoadedCodePage(machine, absPageIndex);
 
-    std_assert(!page, "pc out of section bounds at %llu", *machine->rPc);
+    std_assert(page != nullptr, "pc out of section bounds at %llu", *machine->rPc);
   }
 
-  machine->rPc += sizeof(Instr);
+  *machine->rPc += sizeof(Instr);
 
-  const MemOffset inPageOffset = relOffset % GBC_MAX_PAGE_SZ;
+  const MemOffset inPageOffset = (relOffset % GBC_MAX_PAGE_SZ) / sizeof(Instr);
   return page[inPageOffset];
 }
+Register *getProgramCounter(Machine *machine) { return machine->rPc; }
 
-static void runInstruction(Machine *machine, Instr instr) {}
+GBCOffsets getFileOffets(Machine *machine) { return machine->sections; }
+
+void runInstruction(Machine *machine, Instr instr) {
+  // TODO: Working on this
+}
 
 void runVirtualMachine(std_file *gbcFile) {
   Machine *machine = initVirtualMachine(gbcFile);
@@ -231,7 +236,7 @@ void runVirtualMachine(std_file *gbcFile) {
   // 3. Increment counter.
 
   while (!machine->shouldExit) {
-    Instr instr = readNextInstruction(machine);
+    Instr instr = consumeNextInstruction(machine);
     runInstruction(machine, instr);
   }
 

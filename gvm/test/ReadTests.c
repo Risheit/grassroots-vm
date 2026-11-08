@@ -1,3 +1,4 @@
+#include "Constants.h"
 #include "VirtualMachine.h"
 #include "std/io.h"
 #include "std/memory.h"
@@ -10,6 +11,27 @@ TEST(readValidGBCFile, std_arena *arena) {
   const MemOffset expectedDataSection = 0x62;
   std_file *file =
       std_file_open(arena, str(PREBUILT_DIR "/hello_world.gbc"), FOPEN_READ, 0);
+
+  IS_TRUE(std_file_err(file) == 0);
+
+  // Expect no panic
+  consumeIdentifier(arena, file);
+  consumeVersionNumber(arena, file);
+  GBCOffsets data = consumeSectionOffsets(arena, file);
+
+  IS_TRUE(data.linkTable == expectedLinkTable);
+  IS_TRUE(data.codeSection == expectedCodeSection);
+  IS_TRUE(data.typeTable == expectedTypeTable);
+  IS_TRUE(data.dataSection == expectedDataSection);
+}
+
+TEST(readLargeGBCFile, std_arena *arena) {
+  const MemOffset expectedLinkTable = 0x0;
+  const MemOffset expectedCodeSection = 0x30;
+  const MemOffset expectedTypeTable = 0x0;
+  const MemOffset expectedDataSection = 0x0;
+  std_file *file =
+      std_file_open(arena, str(PREBUILT_DIR "/big_file.gbc"), FOPEN_READ, 0);
 
   IS_TRUE(std_file_err(file) == 0);
 

@@ -22,11 +22,12 @@ typedef int64_t PageIndex;
 #define EXIT_BAD_ARGS 1
 #define EXIT_FILE_ERR 2
 
-#define GBC_MAX_PAGE_SZ 8192
-#define GBC_MAX_PAGE_INSTRS (GBC_MAX_PAGE_SZ / sizeof(Instr))
+#define GBC_MAX_PAGE_SZ 8192 // In bytes
 #define GBC_MAX_CONCURRENT_PAGES 2
-#define GBC_MAX_REGS 256
 
+#define GBC_MAX_PAGE_INSTRS (GBC_MAX_PAGE_SZ / sizeof(Instr))
+
+#define GBC_MAX_REGS 256
 #define GBC_REG_ZERO 0
 #define GBC_REG_PC 255
 #define GBC_REG_IF 254

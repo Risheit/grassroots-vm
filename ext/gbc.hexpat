@@ -6,7 +6,7 @@ import std.ptr;
 #pragma magic [ F7 47 42 43 0A 0D 1A 0A ] @ 0x00
 
 fn instr_type(u32 raw) {
-    u8 opcode = (raw >> 26) & 0x3F;
+    u8 opcode = raw & 0x3F;
     match (opcode) {
         (0x02 | 0x03 | 0x04 | 0x12 |
          0x13 | 0x14 | 0x16 | 0x18): return 1;
@@ -68,25 +68,25 @@ enum Opcode : u8 {
 };
 
 bitfield InstrType1 {
-    immediate : 16;
-    regA      : 8;
-    func      : 2;
     Opcode opcode    : 6;
+    func      : 2;
+    regA      : 8;    
+    immediate : 16;
 };
 
 bitfield InstrType2 {
-    immediate : 10;
-    regB      : 8;
-    regA      : 8;
     Opcode opcode    : 6;
+    regA      : 8;
+    regB      : 8;
+    immediate : 10;
 };
 
 bitfield InstrType3 {
-    regC   : 8;
-    regB   : 8;
-    regA   : 8;
-    func   : 2;
     Opcode opcode : 6;
+    func   : 2;
+    regA   : 8;
+    regB   : 8;
+    regC   : 8;
 };
 
 struct Instruction {

@@ -188,6 +188,10 @@ There is an table entry for each primitive data type stored in the data section.
 For arrays of a type, the table contains an entry to the first element, marking
 that element's size (1, 2, 4, 8 bytes). The size of the array is not maintained.
 
+Element sizes in registers are always extended to the size of the register. For example, 
+a 4-bit negative integer stored as data will be sign-extended to an 8-bit integer when loaded 
+into memory.
+
 ```c
 // Type definitions for dt_row::type field
 #define UINT 0              // SIZE-byte unsigned integer
@@ -460,6 +464,8 @@ Copies an immediate or another register into a register.
 `MOVE` instructions maintain register typing.
 `MOVEI` instructions load bits into a register as unsigned ints. The type of the
 register can be updated through a `TYPE` instruction.
+
+The `func` field signifies where the bits are inserted.
 
 #### `TYPE` Instructions
 

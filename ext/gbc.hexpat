@@ -41,8 +41,8 @@ struct LinkTable {
 };
 
 enum Opcode : u8 {
-    LOAD = 0x01,
-    LOADI,
+    LOADR = 0x01,
+    LOAD,
     JUMP,
     JMPR,
     ADD,

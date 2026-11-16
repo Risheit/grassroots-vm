@@ -1,9 +1,9 @@
-0x62: "Hello, World!\n" 
+0x62: "Hello, World!\n" (0x
 
 MOVEI   0 '1 14     ; Move size of string into register
 PUSH    '1          ; Push string size onto stack
 
-LOADI   '2 0x62     ; Load static string from address 0x40
+MOVEI   0 '2 0x62   ; Move string's starting address into register
 PUSH    '2          ; Push string start onto stack
 
 MOVEI   0 '3 0x01   ; Move print syscall into register

@@ -188,8 +188,8 @@ There is an table entry for each primitive data type stored in the data section.
 For arrays of a type, the table contains an entry to the first element, marking
 that element's size (1, 2, 4, 8 bytes). The size of the array is not maintained.
 
-Element sizes in registers are always extended to the size of the register. For example, 
-a 4-bit negative integer stored as data will be sign-extended to an 8-bit integer when loaded 
+Element sizes in registers are always extended to the size of the register. For example,
+a 4-bit negative integer stored as data will be sign-extended to an 8-bit integer when loaded
 into memory.
 
 ```c
@@ -199,7 +199,7 @@ into memory.
 #define FLOAT 2             // SIZE-byte floating point
 
 typedef struct {
-    uint16_t count;     // Number of table entries
+    uint32_t count;     // Number of table entries
     dt_row entry[];     // Data type table entries
 } type_table;
 
@@ -290,6 +290,7 @@ The following registers are reserved:
 - float('A) represents taking the value of register A as a 64-bit float.
 - type('A) represents the type of a value stored at register A.
 - at(X) represents value stored at an address X.
+- dtable(X) represents the address stored at the data type table at index X.
 
 #### Type 1 Instructions
 
@@ -327,8 +328,8 @@ The following table summarizes the current set of instructions.
 
 | Opcode | Type | Name  | Description                                                        |
 | ------ | ---- | ----- | ------------------------------------------------------------------ |
-| 0x01   | 2    | LOAD  | Load a static value into a register.                               |
-| 0x02   | 1    | LOADI | Load a value from an immediate address into a register.            |
+| 0x01   | 2    | LOADR | Load a raw data chunk from an address into a register.             |
+| 0x02   | 1    | LOAD  | Load a value from the type table into a register.                  |
 | 0x03   | 1    | JUMP  | Jump to an offset from the current program counter.                |
 | 0x04   | 1    | JMPR  | Jump to an address stored in a register.                           |
 | 0x05   | 3    | ADD   | Add the values of two registers.                                   |
@@ -352,15 +353,28 @@ The following table summarizes the current set of instructions.
 | 0x17   | 3    | TYPE  | Cast the value of a register to another type.                      |
 | 0x18   | 1    | EXIT  | Exit the program.                                                  |
 
-#### `LOAD`, `LOADI` Instructions
+#### `LOADR` Instruction
 
 ```
-LOAD    'A 'B             == 'A := at(uint('B))
-LOADI   'A IMM:16         == 'A := at(IMM:16)
+LOADR 'A 'B IMM:3      == 'A := at(uint('B)):IMM
 ```
 
-Loads the value from a memory address into a register 'A. When loading 16 or 32-bit
-values, the lower 16/32 bits of a register is filled.
+Loads `IMM` bytes of value from a memory address stored at 'B into a register 'A, up to
+8 bytes. This data is read in as an unsigned int. Use the `TYPE` instruction to change the
+type after loading the instruction.
+
+Only the lowest 3 bits of `IMM` (bits 29 to 31) are read, the other bits are ignored.
+If `IMM` is set to 0, then the full size of the register (8 bytes) are read. Otherwise, `IMM`
+bytes (1 to 7 bytes) are read.
+
+#### `LOAD` Instruction
+
+```
+LOAD 'A IMM:16        == 'A := at(dtable(IMM))
+```
+
+Loads the typed value stored at the index `IMM` in the program type table into register 'A.
+The instruction reads as many bytes as set in the data type table for that value.
 
 #### `JUMP`, `JMPR` Instructions
 

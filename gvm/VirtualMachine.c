@@ -3,7 +3,10 @@
 #include "std/error.h"
 #include "std/io.h"
 #include "std/memory.h"
+#include <assert.h>
 #include <stdint.h>
+
+static_assert(sizeof(double) == 8, "Size of double on machine must be 8 bytes");
 
 // Holds required details to run the VM
 struct Machine {
@@ -32,6 +35,84 @@ struct Machine {
   Register *rIf; // Comp results
   Register *rEc; // Exit code
 };
+
+[[nodiscard]] static inline uint32_t instrOpcode(Instr instr) {
+  return instr & GBC_OPCODE_MASK;
+}
+
+[[nodiscard]] static inline uint32_t instrT1Func(Instr instr) {
+  return (instr & GBC_FUNC_MASK) >> GBC_FUNC_SHIFT;
+}
+[[nodiscard]] static inline uint32_t instrT1RegA(Instr instr) {
+  return (instr & GBC_T1_REG_A_MASK) >> GBC_T1_REG_A_SHIFT;
+}
+
+[[nodiscard]] static inline uint32_t instrT1Imm(Instr instr) {
+  return (instr & GBC_T1_IMM_MASK) >> GBC_T1_IMM_SHIFT;
+}
+
+[[nodiscard]] static inline Register *instrT2RegA(Machine *machine,
+                                                  Instr instr) {
+  const uint32_t index = (instr & GBC_T2_REG_A_MASK) >> GBC_T2_REG_A_SHIFT;
+
+  if (index > GBC_MAX_REGS) {
+    std_panic("Accessing invalid register %u", index);
+  }
+
+  return &machine->registers[index];
+}
+
+[[nodiscard]] static inline Register *instrT2RegB(Machine *machine,
+                                                  Instr instr) {
+  const uint32_t index = (instr & GBC_T2_REG_B_MASK) >> GBC_T2_REG_B_SHIFT;
+
+  if (index > GBC_MAX_REGS) {
+    std_panic("Accessing invalid register %u", index);
+  }
+
+  return &machine->registers[index];
+}
+
+[[nodiscard]] static inline uint32_t instrT2Imm(Instr instr) {
+  return (instr & GBC_T2_IMM_MASK) >> GBC_T2_IMM_SHIFT;
+}
+
+[[nodiscard]] static inline uint32_t instrT3Func(Instr instr) {
+  return (instr & GBC_FUNC_MASK) >> 6;
+}
+
+[[nodiscard]] static inline Register *instrT3RegA(Machine *machine,
+                                                  Instr instr) {
+  const uint32_t index = (instr & GBC_T3_REG_A_MASK) >> GBC_T3_REG_A_SHIFT;
+
+  if (index > GBC_MAX_REGS) {
+    std_panic("Accessing invalid register %u", index);
+  }
+
+  return &machine->registers[index];
+}
+
+[[nodiscard]] static inline Register *instrT3RegB(Machine *machine,
+                                                  Instr instr) {
+  const uint32_t index = (instr & GBC_T3_REG_B_MASK) >> GBC_T3_REG_B_SHIFT;
+
+  if (index > GBC_MAX_REGS) {
+    std_panic("Accessing invalid register %u", index);
+  }
+
+  return &machine->registers[index];
+}
+
+[[nodiscard]] static inline Register *instrT3RegC(Machine *machine,
+                                                  Instr instr) {
+  const uint32_t index = (instr & GBC_T3_REG_C_MASK) >> GBC_T3_REG_C_SHIFT;
+
+  if (index > GBC_MAX_REGS) {
+    std_panic("Accessing invalid register %u", index);
+  }
+
+  return &machine->registers[index];
+}
 
 [[nodiscard]]
 static inline void *readFileChecked(std_file *restrict file,
@@ -171,10 +252,19 @@ TEST_STATIC Machine *initVirtualMachine(std_file *gbcFile) {
   machine->rIf = &machine->registers[GBC_REG_IF];
   machine->rEc = &machine->registers[GBC_REG_EC];
 
+  // Set all registers to 0 as unsigned int (type 0)
+  std_memset((std_szptr){.size = GBC_MAX_REGS * sizeof(Register),
+                         .ptr = machine->registers},
+             0);
+
   // Initialize program counter to start of file
-  *machine->rPc = machine->sections.codeSection;
-  std_assert(*machine->rPc != 0, "Invalid code offset");
-  readCodePage(machine, *machine->rPc); // Load first code page into memory
+  machine->rPc->valu = machine->sections.codeSection;
+  if (machine->rPc->valu == 0) {
+    std_panic("Invalid initial code offset %llull", machine->rPc->valu);
+  }
+
+  readCodePage(machine,
+               machine->rPc->valu); // Load first code page into memory
 
   return machine;
 }
@@ -201,28 +291,92 @@ TEST_STATIC Instr consumeNextInstruction(Machine *machine) {
   //    current code pages loaded in to find the correct one.
   //  MemIndex = (RelOffset % PG_SIZE) / sizeof(Instr)
 
-  const MemOffset relOffset = *machine->rPc - machine->sections.codeSection;
+  const MemOffset relOffset =
+      machine->rPc->valu - machine->sections.codeSection;
   const PageIndex absPageIndex = (PageIndex)(relOffset / GBC_MAX_PAGE_SZ);
 
   Instr *page = getLoadedCodePage(machine, absPageIndex);
   if (!page) { // Page not loaded in memory
-    readCodePage(machine, *machine->rPc);
+    readCodePage(machine, machine->rPc->valu);
     page = getLoadedCodePage(machine, absPageIndex);
 
-    std_assert(page != nullptr, "pc out of section bounds at %llu", *machine->rPc);
+    std_assert(page != nullptr, "pc out of section bounds at %llu",
+               machine->rPc->valu);
   }
 
-  *machine->rPc += sizeof(Instr);
+  machine->rPc->valu += sizeof(Instr);
 
   const MemOffset inPageOffset = (relOffset % GBC_MAX_PAGE_SZ) / sizeof(Instr);
   return page[inPageOffset];
 }
+
 Register *getProgramCounter(Machine *machine) { return machine->rPc; }
 
 GBCOffsets getFileOffets(Machine *machine) { return machine->sections; }
 
 void runInstruction(Machine *machine, Instr instr) {
-  // TODO: Working on this
+  switch (instrOpcode(instr)) {
+  case GBC_OPCODE_LOADR:
+    const Register *regDest = instrT2RegA(machine, instr);
+    const Register *regSource = instrT2RegB(machine, instr);
+    const uint16_t readAmt =
+        instrT2Imm(instr) & 0x0007; // Only consider bottom 3 bits
+
+    if (readAmt == 0) {
+    } else {
+    }
+
+    break;
+  case GBC_OPCODE_LOAD:
+    break;
+  case GBC_OPCODE_JUMP:
+    break;
+  case GBC_OPCODE_JMPR:
+    break;
+  case GBC_OPCODE_ADD:
+    break;
+  case GBC_OPCODE_SUB:
+    break;
+  case GBC_OPCODE_MUL:
+    break;
+  case GBC_OPCODE_DIV:
+    break;
+  case GBC_OPCODE_MOD:
+    break;
+  case GBC_OPCODE_NOT:
+    break;
+  case GBC_OPCODE_AND:
+    break;
+  case GBC_OPCODE_OR:
+    break;
+  case GBC_OPCODE_XOR:
+    break;
+  case GBC_OPCODE_SHIFT:
+    break;
+  case GBC_OPCODE_LT:
+    break;
+  case GBC_OPCODE_LE:
+    break;
+  case GBC_OPCODE_EQ:
+    break;
+  case GBC_OPCODE_PUSH:
+    break;
+  case GBC_OPCODE_POP:
+    break;
+  case GBC_OPCODE_CALL:
+    break;
+  case GBC_OPCODE_MOVE:
+    break;
+  case GBC_OPCODE_MOVEI:
+    break;
+  case GBC_OPCODE_TYPE:
+    break;
+  case GBC_OPCODE_EXIT:
+    break;
+  default:
+    std_panic("Invalid GBC Opcode %d", instrOpcode(instr));
+    break;
+  }
 }
 
 void runVirtualMachine(std_file *gbcFile) {

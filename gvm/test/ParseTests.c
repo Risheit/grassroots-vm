@@ -3,13 +3,13 @@
 #include "std/io.h"
 #include "std/memory.h"
 #include "std/testing.h"
+#include <assert.h>
 
-#define HELLO_WORLD_INSTR_1 0x000E0116 // MOVEI 0 '1 14
-#define HELLO_WORLD_INSTR_2 0x48010112 // PUSH '1
-#define HELLO_WORLD_INSTR_3 0x00620202 // LOADI '2 0x62
-#define HELLO_WORLD_INSTR_4 0x48020212 // PUSH '2
-
-#define BIG_FILE_INSTR 0x01000005 // ADD '1 '0 '0
+static const Instr helloInstr1 = GBC_createT1Instr(GBC_OP_MOVEI, 0, 1, 14);
+static const Instr helloInstr2 = GBC_createT1Instr(GBC_OP_PUSH, 0, 1, 0);
+static const Instr helloInstr3 = GBC_createT1Instr(GBC_OP_MOVEI, 0, 2, 0x62);
+static const Instr helloInstr4 = GBC_createT1Instr(GBC_OP_PUSH, 0, 2, 0);
+static const Instr bigFileInstr = GBC_createT3Instr(GBC_OP_ADD, 0, 1, 0, 0);
 
 TEST(readValidCodePage, std_file *file) {
   Machine *machine = initVirtualMachine(file);
@@ -23,7 +23,7 @@ TEST(consumeFirstInstruction, std_file *file) {
   MemOffset pcStart = *getProgramCounter(machine);
 
   Instr firstInstr = consumeNextInstruction(machine);
-  IS_TRUE(firstInstr == HELLO_WORLD_INSTR_1);
+  IS_TRUE(firstInstr == helloInstr1);
   IS_TRUE(*getProgramCounter(machine) == pcStart + sizeof(Instr));
 
   destroyVirtualMachine(machine);
@@ -34,19 +34,19 @@ TEST(consumeMultipleInstructions, std_file *file) {
   MemOffset pcStart = *getProgramCounter(machine);
 
   Instr instr1 = consumeNextInstruction(machine);
-  IS_TRUE(instr1 == HELLO_WORLD_INSTR_1);
+  IS_TRUE(instr1 == helloInstr1);
   IS_TRUE(*getProgramCounter(machine) == pcStart + sizeof(Instr));
 
   Instr instr2 = consumeNextInstruction(machine);
-  IS_TRUE(instr2 == HELLO_WORLD_INSTR_2);
+  IS_TRUE(instr2 == helloInstr2);
   IS_TRUE(*getProgramCounter(machine) == pcStart + 2 * sizeof(Instr));
 
   Instr instr3 = consumeNextInstruction(machine);
-  IS_TRUE(instr3 == HELLO_WORLD_INSTR_3);
+  IS_TRUE(instr3 == helloInstr3);
   IS_TRUE(*getProgramCounter(machine) == pcStart + 3 * sizeof(Instr));
 
   Instr instr4 = consumeNextInstruction(machine);
-  IS_TRUE(instr4 == HELLO_WORLD_INSTR_4);
+  IS_TRUE(instr4 == helloInstr4);
   IS_TRUE(*getProgramCounter(machine) == pcStart + 4 * sizeof(Instr));
 
   destroyVirtualMachine(machine);
@@ -61,16 +61,16 @@ TEST(consumePastPageBoundary, std_arena *arena) {
   *getProgramCounter(machine) += GBC_MAX_PAGE_SZ - sizeof(Instr);
 
   Instr instr = consumeNextInstruction(machine);
-  IS_TRUE(instr == BIG_FILE_INSTR);
+  IS_TRUE(instr == bigFileInstr);
   instr = 0; // Reset to ensure file is being read correctly
 
   // At page boundary
   instr = consumeNextInstruction(machine);
-  IS_TRUE(instr == BIG_FILE_INSTR);
+  IS_TRUE(instr == bigFileInstr);
   instr = 0;
 
   instr = consumeNextInstruction(machine);
-  IS_TRUE(instr == BIG_FILE_INSTR);
+  IS_TRUE(instr == bigFileInstr);
   instr = 0;
 
   destroyVirtualMachine(machine);
@@ -87,6 +87,7 @@ int main(int argc, char **argv) {
   RUN(readValidCodePage, hello_world_gbc);
   RUN(consumeFirstInstruction, hello_world_gbc);
   RUN(consumeMultipleInstructions, hello_world_gbc);
+
   std_file_close(hello_world_gbc);
   std_arena_clean(arena);
 

@@ -1,6 +1,7 @@
 import std.mem;
 import std.io;
 import std.ptr;
+import type.magic;
 
 #pragma endian little
 #pragma magic [ F7 47 42 43 0A 0D 1A 0A ] @ 0x00
@@ -18,7 +19,7 @@ fn instr_type(u32 raw) {
 namespace GBC {
 
 struct Header {
-    u8 ident[8];
+    type::Magic<"\xF7\x47\x42\x43\x0A\x0D\x1A\x0A"> ident;
     u16 major       [[name("Major Version")]];
     u16 minor       [[name("Minor Version")]];
     u16 patch       [[name("Patch Version")]];
@@ -92,13 +93,13 @@ bitfield InstrType3 {
 struct Instruction {
     u32 raw [[hidden]];
     u16 t = instr_type(raw);
-    if (t == 1)      InstrType1 instr @ addressof(raw);
-    else if (t == 2) InstrType2 instr @ addressof(raw);
-    else             InstrType3 instr @ addressof(raw);
+    if (t == 1)      GBC::InstrType1 instr @ addressof(raw);
+    else if (t == 2) GBC::InstrType2 instr @ addressof(raw);
+    else             GBC::InstrType3 instr @ addressof(raw);
 };
 
 struct Code {
-    Instruction instr[while(std::mem::read_unsigned($, 4) != 0x00000000)];
+    GBC::Instruction instr[while(std::mem::read_unsigned($, 4) != 0x00000000)];
     u32 code_end [[name("End Marker")]];
 };
 
@@ -110,14 +111,14 @@ enum DataType : u8 {
 
 struct DataTypeRow {
     u8 size         [[name("Element Size (bytes)")]];
-    DataType type;
+    GBC::DataType type;
     padding[2];
     u64 addr        [[name("Data Section Address")]];
 };
 
 struct DataTypeTable {
     u16 count;
-    DataTypeRow entry[count];
+    GBC::DataTypeRow entry[count];
 };
 
 struct Data {
@@ -125,18 +126,18 @@ struct Data {
 };
 
 struct File {
-    Header header;
+    GBC::Header header;
 
     if (header.lt_off != 0)
-        LinkTable link_table @ header.lt_off [[name("Link Table")]];
+        GBC::LinkTable link_table @ header.lt_off [[name("Link Table")]];
 
-    Code code @ header.code_off [[name("Code Section")]];
+    GBC::Code code @ header.code_off [[name("Code Section")]];
 
     if (header.type_off != 0)
-        DataTypeTable type_table @ header.type_off [[name("Data Type Table")]];
+        GBC::DataTypeTable type_table @ header.type_off [[name("Data Type Table")]];
 
     if (header.data_off != 0)
-        Data data @ header.data_off [[name("Data Section")]];
+        GBC::Data data @ header.data_off [[name("Data Section")]];
 };
 
 }
@@ -162,7 +163,31 @@ fn find_end(u64 address) {
 u16 row_count = 0;
 
 struct DataEntryLoc {
-    u8 value[find_end(file.type_table.entry[row_count].addr)] @ file.type_table.entry[row_count].addr;
+    u64 addr = file.type_table.entry[row_count].addr;
+    GBC::DataType type = file.type_table.entry[row_count].type;
+    u8 size = file.type_table.entry[row_count].size;
+    
+    match (type, size) {
+       (GBC::DataType::UINT, 1): u8 value[find_end(addr)] @ addr;
+       (GBC::DataType::UINT, 2): u16 value[find_end(addr) / size] @ addr;
+       (GBC::DataType::UINT, 3): u24 value[find_end(addr) / size] @ addr;
+       (GBC::DataType::UINT, 4): u32 value[find_end(addr) / size] @ addr;
+       (GBC::DataType::UINT, 6): u48 value[find_end(addr) / size] @ addr;
+       (GBC::DataType::UINT, 8): u64 value[find_end(addr) / size] @ addr;
+       (GBC::DataType::UINT, 12): u96 value[find_end(addr) / size] @ addr;
+       (GBC::DataType::UINT, 16): u128 value[find_end(addr) / size] @ addr;
+       (GBC::DataType::INT, 2): s16 value[find_end(addr) / size] @ addr;
+       (GBC::DataType::INT, 3): s24 value[find_end(addr) / size] @ addr;
+       (GBC::DataType::INT, 4): s32 value[find_end(addr) / size] @ addr;
+       (GBC::DataType::INT, 6): s48 value[find_end(addr) / size] @ addr;
+       (GBC::DataType::INT, 8): s64 value[find_end(addr) / size] @ addr;
+       (GBC::DataType::INT, 12): s96 value[find_end(addr) / size] @ addr;
+       (GBC::DataType::INT, 16): s128 value[find_end(addr) / size] @ addr;
+       (GBC::DataType::INT, 1): s8 value[find_end(addr)] @ addr;
+       (GBC::DataType::FLOAT, 4): float value[find_end(addr) / size] @ addr;
+       (GBC::DataType::FLOAT, 8): double value[find_end(addr) / size] @ addr;
+    }
+    
     row_count += 1;
 };
 

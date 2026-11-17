@@ -5,6 +5,9 @@
 #include "std/memory.h" // IWYU pragma: keep
 #include <stdint.h>
 
+static_assert(sizeof(double) == 8, "Size of double on machine must be 8 bytes");
+static_assert(sizeof(float) == 4, "Size of float on machine must be 4 bytes");
+
 typedef struct Machine Machine;
 
 typedef struct {
@@ -18,14 +21,13 @@ typedef struct {
 // value on failure.
 void runVirtualMachine(std_file *gbcFile);
 
+#ifdef TEST_BUILD
 
 // Returns a pointer to the program counter register for read/write access.
-Register *getProgramCounter(Machine *machine);
+MemOffset *getProgramCounter(Machine *machine);
 
-// Returns the code section offset from the machine's GBC offsets.
-MemOffset getMachineCodeSection(Machine *machine);
-
-#ifdef TEST_BUILD
+// Returns a reference to a register in the machine.
+Register *getRegister(Machine *machine, uint32_t index);
 
 // Reads and consumes a GBC file header from the start of [gbcFile]. Returns
 // the section offsets read. If the header contains an invalid identifier or

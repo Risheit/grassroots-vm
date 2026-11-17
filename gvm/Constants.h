@@ -33,8 +33,9 @@ typedef int64_t PageIndex;
 #define GBC_VER_MINOR 1
 #define GBC_VER_PATCH 0
 
-#define EXIT_BAD_ARGS 1
-#define EXIT_FILE_ERR 2
+#define EXIT_BAD_ARGS 1  // Invalid arguments given to program
+#define EXIT_FILE_ERR 2  // Error when parsing or reading file
+#define EXIT_BAD_INSTR 3 // Invalid instruction given
 
 #define GBC_MAX_PAGE_SZ 8192 // In bytes
 #define GBC_MAX_CONCURRENT_PAGES 2
@@ -75,27 +76,41 @@ typedef int64_t PageIndex;
 #define GBC_T3_REG_C_SHIFT 24
 
 // Opcodes
-#define GBC_OPCODE_LOADR 0x01
-#define GBC_OPCODE_LOAD 0x02
-#define GBC_OPCODE_JUMP 0x03
-#define GBC_OPCODE_JMPR 0x04
-#define GBC_OPCODE_ADD 0x05
-#define GBC_OPCODE_SUB 0x06
-#define GBC_OPCODE_MUL 0x07
-#define GBC_OPCODE_DIV 0x08
-#define GBC_OPCODE_MOD 0x09
-#define GBC_OPCODE_NOT 0x0A
-#define GBC_OPCODE_AND 0x0B
-#define GBC_OPCODE_OR 0x0C
-#define GBC_OPCODE_XOR 0x0D
-#define GBC_OPCODE_SHIFT 0x0E
-#define GBC_OPCODE_LT 0x0F
-#define GBC_OPCODE_LE 0x10
-#define GBC_OPCODE_EQ 0x11
-#define GBC_OPCODE_PUSH 0x12
-#define GBC_OPCODE_POP 0x13
-#define GBC_OPCODE_CALL 0x14
-#define GBC_OPCODE_MOVE 0x15
-#define GBC_OPCODE_MOVEI 0x16
-#define GBC_OPCODE_TYPE 0x17
-#define GBC_OPCODE_EXIT 0x18
+#define GBC_OP_LOADR 0x01
+#define GBC_OP_LOAD 0x02
+#define GBC_OP_JUMP 0x03
+#define GBC_OP_JMPR 0x04
+#define GBC_OP_ADD 0x05
+#define GBC_OP_SUB 0x06
+#define GBC_OP_MUL 0x07
+#define GBC_OP_DIV 0x08
+#define GBC_OP_MOD 0x09
+#define GBC_OP_NOT 0x0A
+#define GBC_OP_AND 0x0B
+#define GBC_OP_OR 0x0C
+#define GBC_OP_XOR 0x0D
+#define GBC_OP_SHIFT 0x0E
+#define GBC_OP_LT 0x0F
+#define GBC_OP_LE 0x10
+#define GBC_OP_EQ 0x11
+#define GBC_OP_PUSH 0x12
+#define GBC_OP_POP 0x13
+#define GBC_OP_CALL 0x14
+#define GBC_OP_MOVE 0x15
+#define GBC_OP_MOVEI 0x16
+#define GBC_OP_TYPE 0x17
+#define GBC_OP_EXIT 0x18
+
+// Instruction creation macros - For testing purposes
+
+#define GBC_createT1Instr(opcode, func, regA, imm)                             \
+  ((opcode) | ((func) << GBC_FUNC_SHIFT) | ((regA) << GBC_T1_REG_A_SHIFT) |    \
+   ((imm) << GBC_T1_IMM_SHIFT))
+
+#define GBC_createT2Instr(opcode, regA, regB, imm)                             \
+  ((opcode) | ((regA) << GBC_T2_REG_A_SHIFT) |                                 \
+   ((regB) << GBC_T2_REG_B_SHIFT) | ((imm) << GBC_T2_IMM_SHIFT))
+
+#define GBC_createT3Instr(opcode, func, regA, regB, regC)                      \
+  ((opcode) | ((func) << GBC_FUNC_SHIFT) | ((regA) << GBC_T3_REG_A_SHIFT) |    \
+   ((regB) << GBC_T3_REG_B_SHIFT) | ((regC) << GBC_T3_REG_C_SHIFT))

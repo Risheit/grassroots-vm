@@ -50,6 +50,7 @@ TEST(readInvalidIdentifier, std_arena *arena) {
   std_file *file = std_file_open(arena, str(PREBUILT_DIR "/invalid_ident.gbc"),
                                  FOPEN_READ, 0);
 
+
   IS_TRUE(std_file_err(file) == 0);
 
   IS_PANIC(consumeIdentifier(arena, file));

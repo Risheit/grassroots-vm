@@ -6,8 +6,6 @@
 #include <assert.h>
 #include <stdint.h>
 
-static_assert(sizeof(double) == 8, "Size of double on machine must be 8 bytes");
-
 // Holds required details to run the VM
 struct Machine {
   // Underlying data
@@ -56,7 +54,9 @@ struct Machine {
   const uint32_t index = (instr & GBC_T2_REG_A_MASK) >> GBC_T2_REG_A_SHIFT;
 
   if (index > GBC_MAX_REGS) {
-    std_panic("Accessing invalid register %u", index);
+    std_eprintf("Accessing invalid register %u at address %llu", index,
+                machine->rPc->valu);
+    std_exit(EXIT_BAD_INSTR);
   }
 
   return &machine->registers[index];
@@ -67,7 +67,9 @@ struct Machine {
   const uint32_t index = (instr & GBC_T2_REG_B_MASK) >> GBC_T2_REG_B_SHIFT;
 
   if (index > GBC_MAX_REGS) {
-    std_panic("Accessing invalid register %u", index);
+    std_eprintf("Accessing invalid register %u at address %llu", index,
+                machine->rPc->valu);
+    std_exit(EXIT_BAD_INSTR);
   }
 
   return &machine->registers[index];
@@ -86,7 +88,9 @@ struct Machine {
   const uint32_t index = (instr & GBC_T3_REG_A_MASK) >> GBC_T3_REG_A_SHIFT;
 
   if (index > GBC_MAX_REGS) {
-    std_panic("Accessing invalid register %u", index);
+    std_eprintf("Accessing invalid register %u at address %llu", index,
+                machine->rPc->valu);
+    std_exit(EXIT_BAD_INSTR);
   }
 
   return &machine->registers[index];
@@ -97,7 +101,9 @@ struct Machine {
   const uint32_t index = (instr & GBC_T3_REG_B_MASK) >> GBC_T3_REG_B_SHIFT;
 
   if (index > GBC_MAX_REGS) {
-    std_panic("Accessing invalid register %u", index);
+    std_eprintf("Accessing invalid register %u at address %llu", index,
+                machine->rPc->valu);
+    std_exit(EXIT_BAD_INSTR);
   }
 
   return &machine->registers[index];
@@ -108,15 +114,18 @@ struct Machine {
   const uint32_t index = (instr & GBC_T3_REG_C_MASK) >> GBC_T3_REG_C_SHIFT;
 
   if (index > GBC_MAX_REGS) {
-    std_panic("Accessing invalid register %u", index);
+    std_eprintf("Accessing invalid register %u at address %llu", index,
+                machine->rPc->valu);
+    std_exit(EXIT_BAD_INSTR);
   }
 
   return &machine->registers[index];
 }
 
+// Reads the file, exiting with an error if there is a read error or if the end
+// of file is read.
 [[nodiscard]]
-static inline void *readFileChecked(std_file *restrict file,
-                                    std_arena *restrict arena, size_t n,
+static inline void *readFileChecked(std_file *file, std_arena *arena, size_t n,
                                     size_t size) {
   std_szptr read = std_file_read(file, arena, n, size);
 
@@ -124,16 +133,23 @@ static inline void *readFileChecked(std_file *restrict file,
   if (read.size < n * size) {
     if (std_file_err(file) != FERR_EOF) {
       std_errno_msg("File read error");
+    } else {
+      std_errno_msg("Unexpected file end");
     }
-    std_eprintf("Unable to parse GBC file.\n");
     std_exit(EXIT_FILE_ERR);
   }
 
   return read.ptr;
 }
 
-TEST_STATIC void consumeIdentifier(std_arena *restrict arena,
-                                   std_file *restrict gbcFile) {
+static inline void seekFileChecked(std_file *file, long offset,
+                                   std_seek_pos whence) {
+  std_file_seek(file, offset, whence);
+  if (std_file_err(file) != 0) {
+  }
+}
+
+TEST_STATIC void consumeIdentifier(std_arena *arena, std_file *gbcFile) {
   uint64_t *ident = readFileChecked(gbcFile, arena, 1, sizeof(uint64_t));
   if (*ident != GBC_IDENT) {
     std_eprintf("File is not a GBC file!\n");
@@ -141,8 +157,7 @@ TEST_STATIC void consumeIdentifier(std_arena *restrict arena,
   }
 }
 
-TEST_STATIC void consumeVersionNumber(std_arena *restrict arena,
-                                      std_file *restrict gbcFile) {
+TEST_STATIC void consumeVersionNumber(std_arena *arena, std_file *gbcFile) {
   uint16_t *version =
       readFileChecked(gbcFile, arena, GBC_VER_BYTES, sizeof(uint16_t));
 
@@ -158,7 +173,7 @@ TEST_STATIC void consumeVersionNumber(std_arena *restrict arena,
 }
 
 TEST_STATIC GBCOffsets consumeSectionOffsets(std_arena *arena,
-                                             std_file *restrict gbcFile) {
+                                             std_file *gbcFile) {
   MemOffset *readOffsets =
       readFileChecked(gbcFile, arena, 4, sizeof(MemOffset));
   return (GBCOffsets){
@@ -218,6 +233,8 @@ TEST_STATIC void readCodePage(Machine *machine, MemOffset offset) {
   if (read < GBC_MAX_PAGE_INSTRS && std_file_err(machine->file) != FERR_EOF) {
     std_eprintf("Failed to read GBC file!\n");
     std_exit(EXIT_FILE_ERR);
+  } else if (std_file_err(machine->file) == FERR_EOF) { // Ignore EOF
+    std_file_reset_err(machine->file);
   }
 
   trimExcessRead(machine->codePages[machine->freePage]);
@@ -260,7 +277,8 @@ TEST_STATIC Machine *initVirtualMachine(std_file *gbcFile) {
   // Initialize program counter to start of file
   machine->rPc->valu = machine->sections.codeSection;
   if (machine->rPc->valu == 0) {
-    std_panic("Invalid initial code offset %llull", machine->rPc->valu);
+    std_eprintf("Invalid initial code offset %llull", machine->rPc->valu);
+    std_exit(EXIT_BAD_INSTR);
   }
 
   readCodePage(machine,
@@ -310,71 +328,88 @@ TEST_STATIC Instr consumeNextInstruction(Machine *machine) {
   return page[inPageOffset];
 }
 
-Register *getProgramCounter(Machine *machine) { return machine->rPc; }
+TEST_STATIC MemOffset *getProgramCounter(Machine *machine) {
+  return &machine->rPc->valu;
+}
 
-GBCOffsets getFileOffets(Machine *machine) { return machine->sections; }
+TEST_STATIC Register *getRegister(Machine *machine, uint32_t index) {
+  return &machine->registers[index];
+}
 
-void runInstruction(Machine *machine, Instr instr) {
+TEST_STATIC void runInstruction(Machine *machine, Instr instr) {
+  // Small shared memory scratch arena
+  static std_arena *scratch = nullptr;
+  if (scratch == nullptr) {
+    scratch = std_arena_create(3 * sizeof(uint64_t), ARENA_STOP_RESIZE);
+  } else {
+    std_arena_clean(scratch);
+  }
+
   switch (instrOpcode(instr)) {
-  case GBC_OPCODE_LOADR:
-    const Register *regDest = instrT2RegA(machine, instr);
+  case GBC_OP_LOADR:
+    Register *regDest = instrT2RegA(machine, instr);
     const Register *regSource = instrT2RegB(machine, instr);
-    const uint16_t readAmt =
+    const uint16_t immediate =
         instrT2Imm(instr) & 0x0007; // Only consider bottom 3 bits
 
-    if (readAmt == 0) {
-    } else {
-    }
+    const uint16_t readAmt = immediate == 0 ? 8 : immediate;
+    std_file_seek(machine->file, regSource->valu, FSEEK_SET);
+
+    regDest->valu = 0;
+    regDest->type = RT_uint;
+    std_file_readp(machine->file, &regDest->valu, readAmt, sizeof(byte));
 
     break;
-  case GBC_OPCODE_LOAD:
+  case GBC_OP_LOAD:
     break;
-  case GBC_OPCODE_JUMP:
+  case GBC_OP_JUMP:
     break;
-  case GBC_OPCODE_JMPR:
+  case GBC_OP_JMPR:
     break;
-  case GBC_OPCODE_ADD:
+  case GBC_OP_ADD:
     break;
-  case GBC_OPCODE_SUB:
+  case GBC_OP_SUB:
     break;
-  case GBC_OPCODE_MUL:
+  case GBC_OP_MUL:
     break;
-  case GBC_OPCODE_DIV:
+  case GBC_OP_DIV:
     break;
-  case GBC_OPCODE_MOD:
+  case GBC_OP_MOD:
     break;
-  case GBC_OPCODE_NOT:
+  case GBC_OP_NOT:
     break;
-  case GBC_OPCODE_AND:
+  case GBC_OP_AND:
     break;
-  case GBC_OPCODE_OR:
+  case GBC_OP_OR:
     break;
-  case GBC_OPCODE_XOR:
+  case GBC_OP_XOR:
     break;
-  case GBC_OPCODE_SHIFT:
+  case GBC_OP_SHIFT:
     break;
-  case GBC_OPCODE_LT:
+  case GBC_OP_LT:
     break;
-  case GBC_OPCODE_LE:
+  case GBC_OP_LE:
     break;
-  case GBC_OPCODE_EQ:
+  case GBC_OP_EQ:
     break;
-  case GBC_OPCODE_PUSH:
+  case GBC_OP_PUSH:
     break;
-  case GBC_OPCODE_POP:
+  case GBC_OP_POP:
     break;
-  case GBC_OPCODE_CALL:
+  case GBC_OP_CALL:
     break;
-  case GBC_OPCODE_MOVE:
+  case GBC_OP_MOVE:
     break;
-  case GBC_OPCODE_MOVEI:
+  case GBC_OP_MOVEI:
     break;
-  case GBC_OPCODE_TYPE:
+  case GBC_OP_TYPE:
     break;
-  case GBC_OPCODE_EXIT:
+  case GBC_OP_EXIT:
     break;
   default:
-    std_panic("Invalid GBC Opcode %d", instrOpcode(instr));
+    std_eprintf("Invalid GBC Opcode %d at address %llu", instrOpcode(instr),
+                machine->rPc->valu);
+    std_exit(EXIT_BAD_INSTR);
     break;
   }
 }

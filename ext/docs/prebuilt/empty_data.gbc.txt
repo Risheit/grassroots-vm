@@ -1,0 +1,16 @@
+0xA6: -888456             [0: type: int, size: 4]
+0xAA: 12.88               [1: type: float, size: 4]
+0xAE: 0xF1F2F3F4F5F6F7F8  [2: type: uint, size: 8]
+0xB6: 134735718955722     [3: type: int, size: 6]
+0xBC: 0x1A2A3A4A5A6A      [4: type: uint, size: 6]
+0xC2: 7.2355e-308         [5: type: float, size: 8]
+0xCA: "Hello, World wow"  [6: type: uint, size: 1]
+0xDA: 0xDEADBEEF          [7: type: uint, size: 4]
+0xDE: [                   [8: type: int, size: 4]
+  -1000,
+  1233,
+  -1474836481,
+  2147483647,
+]
+
+EXIT    ; Exit explicitly

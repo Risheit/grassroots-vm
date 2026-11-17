@@ -1,4 +1,4 @@
-0x62: "Hello, World!\n" (0x
+0x62: "Hello, World!\n"   [0: type: uint, size: 1]
 
 MOVEI   0 '1 14     ; Move size of string into register
 PUSH    '1          ; Push string size onto stack

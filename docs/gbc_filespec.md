@@ -186,7 +186,12 @@ a `LOAD` instruction.
 
 There is an table entry for each primitive data type stored in the data section.
 For arrays of a type, the table contains an entry to the first element, marking
-that element's size (1, 2, 4, 8 bytes). The size of the array is not maintained.
+that element's size. The size of the array is not maintained.
+
+Valid element sizes are:
+
+- signed/unsigned integers: Any size value from 0 bytes to 16 bytes.
+- floats: Must be 4 bytes or 8 bytes.
 
 Element sizes in registers are always extended to the size of the register. For example,
 a 4-bit negative integer stored as data will be sign-extended to an 8-bit integer when loaded
@@ -345,7 +350,7 @@ The following table summarizes the current set of instructions.
 | 0x0f   | 3    | LT    | Check if the value of a register is smaller than another.          |
 | 0x10   | 3    | LE    | Check if the value of a register is equal or smaller than another. |
 | 0x11   | 3    | EQ    | Check if the value of a register is equal to another.              |
-| 0x12   | 1    | PUSH  | Puhsh the value in a register onto the stack.                      |
+| 0x12   | 1    | PUSH  | Push the value in a register onto the stack.                       |
 | 0x13   | 1    | POP   | Pop the value in a register off the stack.                         |
 | 0x14   | 1    | CALL  | Call a system call or dynamic function.                            |
 | 0x15   | 2    | MOVE  | Move a value into a register.                                      |

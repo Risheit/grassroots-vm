@@ -38,11 +38,20 @@ struct Machine {
   return instr & GBC_OPCODE_MASK;
 }
 
-[[nodiscard]] static inline uint32_t instrT1Func(Instr instr) {
+[[nodiscard]] static inline uint32_t instrFunc(Instr instr) {
   return (instr & GBC_FUNC_MASK) >> GBC_FUNC_SHIFT;
 }
-[[nodiscard]] static inline uint32_t instrT1RegA(Instr instr) {
-  return (instr & GBC_T1_REG_A_MASK) >> GBC_T1_REG_A_SHIFT;
+[[nodiscard]] static inline Register *instrT1RegA(Machine *machine,
+                                                  Instr instr) {
+  const uint32_t index = (instr & GBC_T1_REG_A_MASK) >> GBC_T1_REG_A_SHIFT;
+
+  if (index > GBC_MAX_REGS) {
+    std_eprintf("Accessing invalid register %u at address %llu", index,
+                machine->rPc->valu);
+    std_exit(EXIT_BAD_INSTR);
+  }
+
+  return &machine->registers[index];
 }
 
 [[nodiscard]] static inline uint32_t instrT1Imm(Instr instr) {
@@ -77,10 +86,6 @@ struct Machine {
 
 [[nodiscard]] static inline uint32_t instrT2Imm(Instr instr) {
   return (instr & GBC_T2_IMM_MASK) >> GBC_T2_IMM_SHIFT;
-}
-
-[[nodiscard]] static inline uint32_t instrT3Func(Instr instr) {
-  return (instr & GBC_FUNC_MASK) >> 6;
 }
 
 [[nodiscard]] static inline Register *instrT3RegA(Machine *machine,
@@ -346,7 +351,7 @@ TEST_STATIC void runInstruction(Machine *machine, Instr instr) {
   }
 
   switch (instrOpcode(instr)) {
-  case GBC_OP_LOADR:
+  case GBC_OP_LOADR: {
     Register *regDest = instrT2RegA(machine, instr);
     const Register *regSource = instrT2RegB(machine, instr);
     const uint16_t immediate =
@@ -360,12 +365,55 @@ TEST_STATIC void runInstruction(Machine *machine, Instr instr) {
     std_file_readp(machine->file, &regDest->valu, readAmt, sizeof(byte));
 
     break;
+  }
+
   case GBC_OP_LOAD:
     break;
-  case GBC_OP_JUMP:
+
+  case GBC_OP_JUMP: {
+    const uint32_t func = instrFunc(instr);
+    const uint32_t imm = instrT1Imm(instr);
+    switch (func) {
+    case 0:
+      machine->rPc->valu += imm;
+      break;
+    case 1:
+      machine->rPc->valu -= imm;
+      break;
+    case 2:
+      if (machine->rIf->valu > 0)
+        machine->rPc->valu += imm;
+      break;
+    case 3:
+      if (machine->rIf->valu > 0)
+        machine->rPc->valu -= imm;
+      break;
+    default: // Should never occur
+      std_panic("Impossible JUMP func value %u", func);
+    }
     break;
-  case GBC_OP_JMPR:
+  }
+
+  case GBC_OP_JMPR: {
+    const uint32_t func = instrFunc(instr);
+    const Register *regA = instrT1RegA(machine, instr);
+
+    switch (func) {
+    case 0:
+      machine->rPc->valu = regA->valu;
+      break;
+    case 1:
+      if (machine->rIf->valu > 0)
+        machine->rPc->valu = regA->valu;
+      break;
+    default:
+      std_eprintf("Invalid JMPR func value %u\n", func);
+      std_exit(EXIT_BAD_INSTR);
+    }
+
     break;
+  }
+
   case GBC_OP_ADD:
     break;
   case GBC_OP_SUB:

@@ -2,6 +2,7 @@
 #include "VirtualMachine.h"
 #include "std/memory.h"
 #include "std/testing.h"
+#include <stdint.h>
 
 static const MemOffset uint8Address = 0xAE;
 
@@ -57,6 +58,86 @@ TEST(runLOADR, Machine *machine) {
   IS_TRUE(regDest->valu == 0xF2F3F4F5F6F7F8);
 }
 
+TEST(runJUMP, Machine *machine) {
+  static const uint16_t jumpAmt = 0xABAB;
+  static const MemOffset initPcValue = 0xC0000000;
+  static const Instr jumpUp = GBC_createT1Instr(GBC_OP_JUMP, 0, 0, jumpAmt);
+  static const Instr jumpDown = GBC_createT1Instr(GBC_OP_JUMP, 1, 0, jumpAmt);
+  static const Instr jumpUpIf = GBC_createT1Instr(GBC_OP_JUMP, 2, 0, jumpAmt);
+  static const Instr jumpDownIf = GBC_createT1Instr(GBC_OP_JUMP, 3, 0, jumpAmt);
+
+  Register *rIf = getRegister(machine, GBC_REG_IF);
+  MemOffset *rPc = getProgramCounter(machine);
+
+  *rPc = initPcValue;
+  runInstruction(machine, jumpUp);
+  IS_TRUE(*rPc == initPcValue + jumpAmt);
+
+  *rPc = initPcValue;
+  runInstruction(machine, jumpDown);
+  IS_TRUE(*rPc == initPcValue - jumpAmt);
+
+  *rPc = initPcValue;
+  rIf->valu = 0;
+  runInstruction(machine, jumpUpIf);
+  IS_TRUE(*rPc == initPcValue);
+
+  *rPc = initPcValue;
+  rIf->valu = 1;
+  runInstruction(machine, jumpUpIf);
+  IS_TRUE(*rPc == initPcValue + jumpAmt);
+
+  *rPc = initPcValue;
+  rIf->valu = 88;
+  runInstruction(machine, jumpUpIf);
+  IS_TRUE(*rPc == initPcValue + jumpAmt);
+
+  *rPc = initPcValue;
+  rIf->valu = 0;
+  runInstruction(machine, jumpDownIf);
+  IS_TRUE(*rPc == initPcValue);
+
+  *rPc = initPcValue;
+  rIf->valu = 1;
+  runInstruction(machine, jumpDownIf);
+  IS_TRUE(*rPc == initPcValue - jumpAmt);
+
+  *rPc = initPcValue;
+  rIf->valu = 88;
+  runInstruction(machine, jumpDownIf);
+  IS_TRUE(*rPc == initPcValue - jumpAmt);
+}
+
+TEST(runJMPR, Machine *machine) {
+  static const MemOffset initPcValue = 0xC0000000;
+  static const MemOffset jumpPcValue = 0xDEADBEEF;
+  static const Instr jmpr = GBC_createT1Instr(GBC_OP_JMPR, 0, 1, 0);
+  static const Instr jmprIf = GBC_createT1Instr(GBC_OP_JMPR, 1, 1, 0);
+
+  getRegister(machine, 1)->valu = jumpPcValue;
+  Register *rIf = getRegister(machine, GBC_REG_IF);
+  MemOffset *rPc = getProgramCounter(machine);
+
+  *rPc = initPcValue;
+  runInstruction(machine, jmpr);
+  IS_TRUE(*rPc == jumpPcValue);
+
+  *rPc = initPcValue;
+  rIf->valu = 0;
+  runInstruction(machine, jmprIf);
+  IS_TRUE(*rPc == initPcValue);
+
+  *rPc = initPcValue;
+  rIf->valu = 1;
+  runInstruction(machine, jmprIf);
+  IS_TRUE(*rPc == jumpPcValue);
+
+  *rPc = initPcValue;
+  rIf->valu = 88;
+  runInstruction(machine, jmprIf);
+  IS_TRUE(*rPc == jumpPcValue);
+}
+
 int main(int argc, char **argv) {
   INIT(argc, argv);
 
@@ -66,6 +147,8 @@ int main(int argc, char **argv) {
   Machine *machine = initVirtualMachine(file);
 
   RUN(runLOADR, machine);
+  RUN(runJUMP, machine);
+  RUN(runJMPR, machine);
 
   CONCLUDE();
 }

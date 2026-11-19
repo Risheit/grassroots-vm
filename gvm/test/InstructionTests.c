@@ -138,6 +138,217 @@ TEST(runJMPR, Machine *machine) {
   IS_TRUE(*rPc == jumpPcValue);
 }
 
+TEST(runADD, Machine *machine) {
+  Register *regA = getRegister(machine, 1);
+  Register *regB = getRegister(machine, 2);
+  Register *regC = getRegister(machine, 3);
+
+  // uint: 10 + 5 = 15
+  regA->valu = 0;
+  regB->type = RT_uint;
+  regB->valu = 10;
+  regC->type = RT_uint;
+  regC->valu = 5;
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_ADD, 0, 1, 2, 3));
+  IS_TRUE(regA->type == RT_uint);
+  IS_TRUE(regA->valu == regB->valu + regC->valu);
+
+  // int: 10 + (-3) = 7
+  regA->vali = 0;
+  regB->type = RT_int;
+  regB->vali = 10;
+  regC->type = RT_int;
+  regC->vali = -3;
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_ADD, 0, 1, 2, 3));
+  IS_TRUE(regA->type == RT_int);
+  IS_TRUE(regA->vali == regB->vali + regC->vali);
+
+  // float: 3.14 + (-0.14) = 3.0
+  regA->valf = 0.0;
+  regB->type = RT_float;
+  regB->valf = 3.14;
+  regC->type = RT_float;
+  regC->valf = -0.14;
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_ADD, 0, 1, 2, 3));
+  IS_TRUE(regA->type == RT_float);
+  IS_TRUE(regA->valf == regB->valf + regC->valf);
+}
+
+TEST(runSUB, Machine *machine) {
+  Register *regA = getRegister(machine, 1);
+  Register *regB = getRegister(machine, 2);
+  Register *regC = getRegister(machine, 3);
+
+  // uint: 10 - 3 = 7
+  regA->valu = 0;
+  regB->type = RT_uint;
+  regB->valu = 10;
+  regC->type = RT_uint;
+  regC->valu = 3;
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_SUB, 0, 1, 2, 3));
+  IS_TRUE(regA->type == RT_uint);
+  IS_TRUE(regA->valu == regB->valu - regC->valu);
+
+  // int: 10 - (-3) = 13
+  regA->vali = 0;
+  regB->type = RT_int;
+  regB->vali = 10;
+  regC->type = RT_int;
+  regC->vali = -3;
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_SUB, 0, 1, 2, 3));
+  IS_TRUE(regA->type == RT_int);
+  IS_TRUE(regA->vali == regB->vali - regC->vali);
+
+  // float: 5.5 - 2.5 = 3.0
+  regA->valf = 0.0;
+  regB->type = RT_float;
+  regB->valf = 5.5;
+  regC->type = RT_float;
+  regC->valf = 2.5;
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_SUB, 0, 1, 2, 3));
+  IS_TRUE(regA->type == RT_float);
+  IS_TRUE(regA->valf == regB->valf - regC->valf);
+}
+
+TEST(runMUL, Machine *machine) {
+  Register *regA = getRegister(machine, 1);
+  Register *regB = getRegister(machine, 2);
+  Register *regC = getRegister(machine, 3);
+
+  // uint: 6 * 7 = 42
+  regA->valu = 0;
+  regB->type = RT_uint;
+  regB->valu = 6;
+  regC->type = RT_uint;
+  regC->valu = 7;
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_MUL, 0, 1, 2, 3));
+  IS_TRUE(regA->type == RT_uint);
+  IS_TRUE(regA->valu == regB->valu * regC->valu);
+
+  // int: (-6) * 7 = -42
+  regA->vali = 0;
+  regB->type = RT_int;
+  regB->vali = -6;
+  regC->type = RT_int;
+  regC->vali = 7;
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_MUL, 0, 1, 2, 3));
+  IS_TRUE(regA->type == RT_int);
+  IS_TRUE(regA->vali == regB->vali * regC->vali);
+
+  // float: 2.5 * 4.0 = 10.0
+  regA->valf = 0.0;
+  regB->type = RT_float;
+  regB->valf = 2.5;
+  regC->type = RT_float;
+  regC->valf = 4.0;
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_MUL, 0, 1, 2, 3));
+  IS_TRUE(regA->type == RT_float);
+  IS_TRUE(regA->valf == regB->valf * regC->valf);
+}
+
+TEST(runDIV, Machine *machine) {
+  Register *regA = getRegister(machine, 1);
+  Register *regB = getRegister(machine, 2);
+  Register *regC = getRegister(machine, 3);
+
+  // uint: 15 / 4 = 3
+  regA->valu = 0;
+  regB->type = RT_uint;
+  regB->valu = 15;
+  regC->type = RT_uint;
+  regC->valu = 4;
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_DIV, 0, 1, 2, 3));
+  IS_TRUE(regA->type == RT_uint);
+  IS_TRUE(regA->valu == regB->valu / regC->valu);
+
+  // int: (-15) / 4 = -3
+  regA->vali = 0;
+  regB->type = RT_int;
+  regB->vali = -15;
+  regC->type = RT_int;
+  regC->vali = 4;
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_DIV, 0, 1, 2, 3));
+  IS_TRUE(regA->type == RT_int);
+  IS_TRUE(regA->vali == regB->vali / regC->vali);
+
+  // float: 7.5 / 2.5 = 3.0
+  regA->valf = 0.0;
+  regB->type = RT_float;
+  regB->valf = 7.5;
+  regC->type = RT_float;
+  regC->valf = 2.5;
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_DIV, 0, 1, 2, 3));
+  IS_TRUE(regA->type == RT_float);
+  IS_TRUE(regA->valf == regB->valf / regC->valf);
+}
+
+TEST(runMOD, Machine *machine) {
+  Register *regA = getRegister(machine, 1);
+  Register *regB = getRegister(machine, 2);
+  Register *regC = getRegister(machine, 3);
+
+  // uint: 15 % 4 = 3
+  regA->valu = 0;
+  regB->type = RT_uint;
+  regB->valu = 15;
+  regC->type = RT_uint;
+  regC->valu = 4;
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_MOD, 0, 1, 2, 3));
+  IS_TRUE(regA->type == RT_uint);
+  IS_TRUE(regA->valu == regB->valu % regC->valu);
+
+  // int: (-15) % 4 = -3
+  regA->vali = 0;
+  regB->type = RT_int;
+  regB->vali = -15;
+  regC->type = RT_int;
+  regC->vali = 4;
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_MOD, 0, 1, 2, 3));
+  IS_TRUE(regA->type == RT_int);
+  IS_TRUE(regA->vali == regB->vali % regC->vali);
+
+  // float: MOD on float should fail
+  regA->valf = 0.0;
+  regB->type = RT_float;
+  regB->valf = 5.5;
+  regC->type = RT_float;
+  regC->valf = 2.0;
+  IS_NONZERO_EXIT(
+      runInstruction(machine, GBC_createT3Instr(GBC_OP_MOD, 0, 1, 2, 3)),
+      EXIT_BAD_INSTR);
+}
+
+TEST(zeroRegNotModifiable, Machine *machine) {
+  Register *regZero = getRegister(machine, GBC_REG_ZERO);
+  Register *regB = getRegister(machine, 1);
+  Register *regC = getRegister(machine, 2);
+
+  regB->type = RT_uint;
+  regB->valu = 10;
+  regC->type = RT_uint;
+  regC->valu = 5;
+
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_ADD, 0, 0, 1, 2));
+  IS_TRUE(regZero->valu == 0);
+  IS_TRUE(regZero->type == RT_uint);
+
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_SUB, 0, 0, 1, 2));
+  IS_TRUE(regZero->valu == 0);
+  IS_TRUE(regZero->type == RT_uint);
+
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_MUL, 0, 0, 1, 2));
+  IS_TRUE(regZero->valu == 0);
+  IS_TRUE(regZero->type == RT_uint);
+
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_DIV, 0, 0, 1, 2));
+  IS_TRUE(regZero->valu == 0);
+  IS_TRUE(regZero->type == RT_uint);
+
+  runInstruction(machine, GBC_createT3Instr(GBC_OP_MOD, 0, 0, 1, 2));
+  IS_TRUE(regZero->valu == 0);
+  IS_TRUE(regZero->type == RT_uint);
+}
+
 int main(int argc, char **argv) {
   INIT(argc, argv);
 
@@ -147,8 +358,17 @@ int main(int argc, char **argv) {
   Machine *machine = initVirtualMachine(file);
 
   RUN(runLOADR, machine);
+
+  MemOffset initrPc = *getProgramCounter(machine);
   RUN(runJUMP, machine);
   RUN(runJMPR, machine);
+  *getProgramCounter(machine) = initrPc; // Reset PC after jumps modify it
+
+  RUN(runADD, machine);
+  RUN(runSUB, machine);
+  RUN(runMUL, machine);
+  RUN(runDIV, machine);
+  RUN(runMOD, machine);
 
   CONCLUDE();
 }

@@ -273,14 +273,15 @@ operations or from `LOAD` operations from memory. Registers contain fixed-width
 example, loading a signed, 32-bit negative number into a register will move the sign
 bit to the 64th bit instead, extending it to a 64-bit negative number.
 
-Reserved registers have specified initialization values they should be set to.
+Reserved registers may have specified initialization values they are set to. If no value is specified, then
+they are default initialized to 0.
 
 The following registers are reserved:
 
-- `'zero = '0`: The void register is always zero, when copying from or to.
-- `'pc = '255`: The program counter register represents the current address in code.
-- `'if = '254`: The cond register stores the result of comparison operations. This starts at 0.
-- `'ec = '253`: The exit code register, storing the program return value. Only the lowest 16 bits are read. This starts at 0.
+- `'zero = '0`: The void register is always zero, and its type is always UINT, when copying from or to.
+- `'pc = '255`: The program counter register represents the current address in code. Its type is UINT.
+- `'if = '254`: The cond register stores the result of comparison operations. Its type is UINT.
+- `'ec = '253`: The exit code register, storing the program return value. Only the lowest 16 bits are read on exit. Its type is INT.
 
 ### Instruction Format
 
@@ -404,13 +405,15 @@ The `func` field separates different jump variations.
 ADD 'A 'B 'C            == 'A := val('B) + val('C)
 SUB 'A 'B 'C            == 'A := val('B) - val('C)
 MUL 'A 'B 'C            == 'A := val('B) * val('C)
-DIV A 'B 'C             == 'A := val('B) / val('C)
+DIV 'A 'B 'C            == 'A := val('B) / val('C)
 MOD 'A 'B 'C            == 'A := val('B) % val('C)
 ```
 
 Performs arithmetic on target registers.
 Performing arithmetic operations on values with different types
 is undefined behaviour.
+
+Modulus operations on floats fail with an error.
 
 #### `NOT`, `AND`, `OR`, `XOR` Instructions
 
@@ -497,6 +500,7 @@ TYPE 2 'A 'B        == 'A := float(val('B))     ; Read as 64-bit float
 Copies the value of one register to another, reinterpreting the
 underlying value as another type. It's important to note that the underlying
 value is not changed, just the register type.
+Running a `TYPE` instruction on a reserved register with a specified type does nothing.
 
 The `func` field distinguishes the type to convert to.
 

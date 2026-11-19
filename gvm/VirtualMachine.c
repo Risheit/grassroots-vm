@@ -34,6 +34,11 @@ struct Machine {
   Register *rEc; // Exit code
 };
 
+#define exitBadInstruction(fmt, ...)                                           \
+  std_eprintf((fmt)__VA_OPT__(, ) __VA_ARGS__);                                \
+  std_eprintf(" at location %p\n", (void *)machine->rPc->valu);                \
+  std_exit(EXIT_BAD_INSTR)
+
 [[nodiscard]] static inline uint32_t instrOpcode(Instr instr) {
   return instr & GBC_OPCODE_MASK;
 }
@@ -46,9 +51,7 @@ struct Machine {
   const uint32_t index = (instr & GBC_T1_REG_A_MASK) >> GBC_T1_REG_A_SHIFT;
 
   if (index > GBC_MAX_REGS) {
-    std_eprintf("Accessing invalid register %u at address %llu", index,
-                machine->rPc->valu);
-    std_exit(EXIT_BAD_INSTR);
+    exitBadInstruction("Accessing invalid register %u", index);
   }
 
   return &machine->registers[index];
@@ -63,9 +66,7 @@ struct Machine {
   const uint32_t index = (instr & GBC_T2_REG_A_MASK) >> GBC_T2_REG_A_SHIFT;
 
   if (index > GBC_MAX_REGS) {
-    std_eprintf("Accessing invalid register %u at address %llu", index,
-                machine->rPc->valu);
-    std_exit(EXIT_BAD_INSTR);
+    exitBadInstruction("Accessing invalid register %u", index);
   }
 
   return &machine->registers[index];
@@ -76,9 +77,7 @@ struct Machine {
   const uint32_t index = (instr & GBC_T2_REG_B_MASK) >> GBC_T2_REG_B_SHIFT;
 
   if (index > GBC_MAX_REGS) {
-    std_eprintf("Accessing invalid register %u at address %llu", index,
-                machine->rPc->valu);
-    std_exit(EXIT_BAD_INSTR);
+    exitBadInstruction("Accessing invalid register %u", index);
   }
 
   return &machine->registers[index];
@@ -93,9 +92,7 @@ struct Machine {
   const uint32_t index = (instr & GBC_T3_REG_A_MASK) >> GBC_T3_REG_A_SHIFT;
 
   if (index > GBC_MAX_REGS) {
-    std_eprintf("Accessing invalid register %u at address %llu", index,
-                machine->rPc->valu);
-    std_exit(EXIT_BAD_INSTR);
+    exitBadInstruction("Accessing invalid register %u", index);
   }
 
   return &machine->registers[index];
@@ -106,9 +103,7 @@ struct Machine {
   const uint32_t index = (instr & GBC_T3_REG_B_MASK) >> GBC_T3_REG_B_SHIFT;
 
   if (index > GBC_MAX_REGS) {
-    std_eprintf("Accessing invalid register %u at address %llu", index,
-                machine->rPc->valu);
-    std_exit(EXIT_BAD_INSTR);
+    exitBadInstruction("Accessing invalid register %u", index);
   }
 
   return &machine->registers[index];
@@ -119,9 +114,7 @@ struct Machine {
   const uint32_t index = (instr & GBC_T3_REG_C_MASK) >> GBC_T3_REG_C_SHIFT;
 
   if (index > GBC_MAX_REGS) {
-    std_eprintf("Accessing invalid register %u at address %llu", index,
-                machine->rPc->valu);
-    std_exit(EXIT_BAD_INSTR);
+    exitBadInstruction("Accessing invalid register %u", index);
   }
 
   return &machine->registers[index];
@@ -145,13 +138,6 @@ static inline void *readFileChecked(std_file *file, std_arena *arena, size_t n,
   }
 
   return read.ptr;
-}
-
-static inline void seekFileChecked(std_file *file, long offset,
-                                   std_seek_pos whence) {
-  std_file_seek(file, offset, whence);
-  if (std_file_err(file) != 0) {
-  }
 }
 
 TEST_STATIC void consumeIdentifier(std_arena *arena, std_file *gbcFile) {
@@ -282,8 +268,8 @@ TEST_STATIC Machine *initVirtualMachine(std_file *gbcFile) {
   // Initialize program counter to start of file
   machine->rPc->valu = machine->sections.codeSection;
   if (machine->rPc->valu == 0) {
-    std_eprintf("Invalid initial code offset %llull", machine->rPc->valu);
-    std_exit(EXIT_BAD_INSTR);
+    std_eprintf("Invalid initial code offset %llu", machine->rPc->valu);
+    std_exit(EXIT_FILE_ERR);
   }
 
   readCodePage(machine,
@@ -333,11 +319,11 @@ TEST_STATIC Instr consumeNextInstruction(Machine *machine) {
   return page[inPageOffset];
 }
 
-TEST_STATIC MemOffset *getProgramCounter(Machine *machine) {
+TEST_HELPER MemOffset *getProgramCounter(Machine *machine) {
   return &machine->rPc->valu;
 }
 
-TEST_STATIC Register *getRegister(Machine *machine, uint32_t index) {
+TEST_HELPER Register *getRegister(Machine *machine, uint32_t index) {
   return &machine->registers[index];
 }
 
@@ -407,23 +393,126 @@ TEST_STATIC void runInstruction(Machine *machine, Instr instr) {
         machine->rPc->valu = regA->valu;
       break;
     default:
-      std_eprintf("Invalid JMPR func value %u\n", func);
-      std_exit(EXIT_BAD_INSTR);
+      exitBadInstruction("Invalid JMPR func value %u", func);
     }
 
     break;
   }
 
-  case GBC_OP_ADD:
+  case GBC_OP_ADD: {
+    Register *regA = instrT3RegA(machine, instr);
+    const Register *regB = instrT3RegB(machine, instr);
+    const Register *regC = instrT3RegC(machine, instr);
+
+    switch (regB->type) {
+    case RT_uint:
+      regA->type = RT_uint;
+      regA->valu = regB->valu + regC->valu;
+      break;
+    case RT_int:
+      regA->type = RT_int;
+      regA->vali = regB->vali + regC->vali;
+      break;
+    case RT_float:
+      regA->type = RT_float;
+      regA->valf = regB->valf + regC->valf;
+      break;
+    }
+
     break;
-  case GBC_OP_SUB:
+  }
+
+  case GBC_OP_SUB: {
+    Register *regA = instrT3RegA(machine, instr);
+    const Register *regB = instrT3RegB(machine, instr);
+    const Register *regC = instrT3RegC(machine, instr);
+
+    switch (regB->type) {
+    case RT_uint:
+      regA->type = RT_uint;
+      regA->valu = regB->valu - regC->valu;
+      break;
+    case RT_int:
+      regA->type = RT_int;
+      regA->vali = regB->vali - regC->vali;
+      break;
+    case RT_float:
+      regA->type = RT_float;
+      regA->valf = regB->valf - regC->valf;
+      break;
+    }
+
     break;
-  case GBC_OP_MUL:
+  }
+
+  case GBC_OP_MUL: {
+    Register *regA = instrT3RegA(machine, instr);
+    const Register *regB = instrT3RegB(machine, instr);
+    const Register *regC = instrT3RegC(machine, instr);
+
+    switch (regB->type) {
+    case RT_uint:
+      regA->type = RT_uint;
+      regA->valu = regB->valu * regC->valu;
+      break;
+    case RT_int:
+      regA->type = RT_int;
+      regA->vali = regB->vali * regC->vali;
+      break;
+    case RT_float:
+      regA->type = RT_float;
+      regA->valf = regB->valf * regC->valf;
+      break;
+    }
+
     break;
-  case GBC_OP_DIV:
+  }
+
+  case GBC_OP_DIV: {
+    Register *regA = instrT3RegA(machine, instr);
+    const Register *regB = instrT3RegB(machine, instr);
+    const Register *regC = instrT3RegC(machine, instr);
+
+    switch (regB->type) {
+    case RT_uint:
+      regA->type = RT_uint;
+      regA->valu = regB->valu / regC->valu;
+      break;
+    case RT_int:
+      regA->type = RT_int;
+      regA->vali = regB->vali / regC->vali;
+      break;
+    case RT_float:
+      regA->type = RT_float;
+      regA->valf = regB->valf / regC->valf;
+      break;
+    }
+
     break;
-  case GBC_OP_MOD:
+  }
+
+  case GBC_OP_MOD: {
+    Register *regA = instrT3RegA(machine, instr);
+    const Register *regB = instrT3RegB(machine, instr);
+    const Register *regC = instrT3RegC(machine, instr);
+
+    switch (regB->type) {
+    case RT_uint:
+      regA->type = RT_uint;
+      regA->valu = regB->valu % regC->valu;
+      break;
+    case RT_int:
+      regA->type = RT_int;
+      regA->vali = regB->vali % regC->vali;
+      break;
+    case RT_float:
+      exitBadInstruction("Invalid attempt to run MOD on float registers");
+      break;
+    }
+
     break;
+  }
+
   case GBC_OP_NOT:
     break;
   case GBC_OP_AND:
@@ -455,11 +544,20 @@ TEST_STATIC void runInstruction(Machine *machine, Instr instr) {
   case GBC_OP_EXIT:
     break;
   default:
-    std_eprintf("Invalid GBC Opcode %d at address %llu", instrOpcode(instr),
-                machine->rPc->valu);
-    std_exit(EXIT_BAD_INSTR);
+    exitBadInstruction("Invalid GBC Opcode %d", instrOpcode(instr));
     break;
   }
+
+  // Cleanup: Ensure machine state is valid after an instruction is run
+
+  // Set any constant register values
+  machine->registers[GBC_REG_ZERO].valu = 0;
+
+  // Set any constant register types
+  machine->registers[GBC_REG_ZERO].type = RT_uint;
+  machine->registers[GBC_REG_PC].type = RT_uint;
+  machine->registers[GBC_REG_IF].type = RT_uint;
+  machine->registers[GBC_REG_EC].type = RT_int;
 }
 
 void runVirtualMachine(std_file *gbcFile) {

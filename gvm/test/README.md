@@ -22,8 +22,13 @@ To be used to expose functions only when testing.
 Define to `static` only when not compiled as part of a test.
 To be used to mark functions as static when not testing.
 
+### `TEST_HELPER`
+
+Define to `[[maybe_unused]] static` only when not compiled as part of a test.
+To be used on helper functions for testing purposes, to prevent unused warnings
+when compiling.
+
 ### `PREBUILT_DIR`
 
 Defined to the location of `ext/prebuild` when compiled as part of a test.
 To be used to access prebuilt files for testing.
-

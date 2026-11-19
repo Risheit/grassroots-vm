@@ -3,6 +3,7 @@ CompileFlags:
   - -xc
   - -DTEST_BUILD
   - -DTEST_STATIC=
+  - -DTEST_HELPER=
 
 Diagnostics:
   ClangTidy:
